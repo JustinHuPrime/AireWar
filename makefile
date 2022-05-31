@@ -83,7 +83,7 @@ WARNINGS := -pedantic -pedantic-errors -Wall -Wextra -Wdouble-promotion\
 -Woverloaded-virtual -Wsign-promo
 
 OPTIONS := -std=c++20 -D_POSIX_C_SOURCE=202205L -I$(SRCDIR)\
--Ilibs/stb -Ilibs/json/single_include/nlohmann $(shell pkg-config --cflags libsodium sdl2 glew opengl freetype2 glm)
+-Ilibs/stb -Ilibs/json/single_include $(shell pkg-config --cflags libsodium sdl2 glew opengl freetype2 glm)
 TOPTIONS := -I$(TSRCDIR) -Ilibs/Catch2/src -Ilibs/Catch2/Build/generated-includes
 LIBS := $(shell pkg-config --libs libsodium sdl2 glew opengl freetype2 glm)
 
