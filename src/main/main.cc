@@ -33,6 +33,12 @@
 #include "util/exceptions/initException.h"
 #include "version.h"
 
+#if defined(__linux__)
+#include <signal.h>
+#elif
+#error "operating system not supported/recognized"
+#endif
+
 using namespace std;
 using namespace airewar;
 using namespace airewar::util::exceptions;
@@ -97,6 +103,17 @@ int main(int argc, char *argv[]) {
 
     // set up stbi
     stbi_set_flip_vertically_on_load(true);
+
+    // os-specific setup
+#if defined(__linux__)
+    // turn off SIGPIPE
+    struct sigaction act;
+    memset(&act, 0, sizeof(act));
+    act.sa_handler = SIG_IGN;
+    sigaction(SIGPIPE, &act, nullptr);
+#elif
+#error "operating system not supported/recognized"
+#endif
 
     // setup static objects
     options = make_unique<Options>();
