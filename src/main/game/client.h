@@ -25,8 +25,43 @@
 #include <string>
 #include <thread>
 
+#include "game/map.h"
+#include "game/networking/networking.h"
+
 namespace airewar::game {
-class Client final {};
+class Client final {
+ public:
+  Map map;
+
+  enum class State {
+    STARTING,
+    GENERATING_MAP,
+    RUNNING,
+    ERROR,
+  };
+  std::atomic<State> state;
+  std::string errorMessage;
+
+  Client(std::u32string const &address,
+         std::u32string const &password) noexcept;
+  Client(Client const &) noexcept = delete;
+  Client(Client &&) noexcept = delete;
+
+  ~Client() noexcept;
+
+  Client &operator=(Client const &) noexcept = delete;
+  Client &operator=(Client &&) noexcept = delete;
+
+ private:
+  std::u32string address_;
+  std::u32string password_;
+  std::atomic_bool stop_;
+  std::unique_ptr<networking::Connection> connection_;
+
+  std::thread thread_;
+
+  void run() noexcept;
+};
 
 extern std::unique_ptr<Client> client;
 }  // namespace airewar::game

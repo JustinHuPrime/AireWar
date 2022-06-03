@@ -37,6 +37,8 @@ class SocketException final : public std::exception {
 
   char const *what() const noexcept override;
 
+  operator std::string() const noexcept;
+
  private:
   std::string message_;
 };

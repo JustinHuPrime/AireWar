@@ -26,12 +26,13 @@ namespace airewar::ui::scene {
 class OptionsMenu final {
  public:
   OptionsMenu() noexcept
-      : background_(resources->joinGameBackground),
-        title_(Image2D::centered(resources->joinGameTitle, 0.5f, layout(0, 7))),
+      : background_(resources->optionsBackground),
+        title_(Image2D::centered(resources->optionsTitle, 0.5f, layout(0, 7))),
         cancel_(Button2D::centered(resources->backOn, resources->backOff, 0.25f,
                                    layout(6, 7))),
         accept_(Button2D::centered(resources->joinOn, resources->joinOff, 0.75f,
-                                   layout(6, 7))) {}
+                                   layout(6, 7))) {
+  }  // TODO: use appropriate buttons
   OptionsMenu(OptionsMenu const &) noexcept = delete;
   OptionsMenu(OptionsMenu &&) noexcept = delete;
 

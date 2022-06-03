@@ -21,10 +21,69 @@
 
 #include <codecvt>
 #include <locale>
-#include <memory>
+
+#include "options.h"
+#include "sodium.h"
+#include "util/exceptions/socketException.h"
+#include "util/exceptions/stopFlag.h"
 
 using namespace std;
+using namespace airewar::util::exceptions;
+using namespace airewar::game::networking;
 
 namespace airewar::game {
+Client::Client(u32string const &address, u32string const &password) noexcept
+    : map(),
+      state(State::STARTING),
+      errorMessage(),
+      address_(address),
+      password_(password),
+      stop_(false),
+      connection_(),
+      thread_([this]() { return run(); }) {}
+
+Client::~Client() noexcept {
+  stop_ = true;
+  thread_.join();
+}
+
+void Client::run() noexcept {
+  try {
+    map.initTriangles();
+
+    wstring_convert<codecvt_utf8<char32_t>, char32_t> converter;
+    string addressStr = converter.to_bytes(address_);
+    connection_ = networking::Connection::makeClient(
+        converter.to_bytes(address_), networking::PORT, stop_);
+
+    if (!connection_->handshake(converter.to_bytes(password_))) {
+      errorMessage = "Incorrect password";
+      state = State::ERROR;
+      return;
+    }
+
+    bool hasSlot;
+    *connection_ >> hasSlot;
+    if (!hasSlot) {
+      errorMessage = "No slot available";
+      state = State::ERROR;
+      return;
+    }
+
+    uint64_t seed;
+    *connection_ >> seed;
+    map.setSeed(seed);
+    state = State::GENERATING_MAP;
+
+    // TODO: generate map
+  } catch (SocketException const &e) {
+    errorMessage = static_cast<string>(e);
+    state = State::ERROR;
+    return;
+  } catch (StopFlag const &) {
+    return;
+  }
+}
+
 unique_ptr<Client> client;
 }  // namespace airewar::game

@@ -221,6 +221,12 @@ Connection &Connection::operator<<(std::u32string data) {
   return *this;
 }
 
+Connection &Connection::operator<<(bool data) {
+  sendBuf.push_back('o');
+  sendBuf.push_back(data ? 1 : 0);
+  return *this;
+}
+
 Connection &Connection::operator>>(uint8_t &data) {
   wait(1);
   uint8_t type = recvBuf.front();
@@ -486,7 +492,7 @@ Connection &Connection::operator>>(std::u8string &data) {
   wait(1);
   uint8_t type = recvBuf.front();
   recvBuf.pop_front();
-  if (type != 's') throw FormatException("expected std::u8string");
+  if (type != 'u') throw FormatException("expected std::u8string");
 
   wait(8);
   uint64_t size = 0;
@@ -524,7 +530,7 @@ Connection &Connection::operator>>(std::u32string &data) {
   wait(1);
   uint8_t type = recvBuf.front();
   recvBuf.pop_front();
-  if (type != 's') throw FormatException("expected std::u8string");
+  if (type != 'U') throw FormatException("expected std::u32string");
 
   wait(8);
   uint64_t size = 0;
@@ -562,6 +568,18 @@ Connection &Connection::operator>>(std::u32string &data) {
     recvBuf.pop_front();
     data += u.c;
   }
+  return *this;
+}
+
+Connection &Connection::operator>>(bool &data) {
+  wait(1);
+  uint8_t type = recvBuf.front();
+  recvBuf.pop_front();
+  if (type != 'o') throw FormatException("expected bool");
+
+  wait(1);
+  data = recvBuf.front() != 0;
+  recvBuf.pop_front();
   return *this;
 }
 
@@ -620,7 +638,7 @@ void Connection::recv() {
   }
 }
 
-void Connection::handshake(string const &password) {
+bool Connection::handshake(string const &password) {
   unique_ptr<unsigned char[]> sendSalt =
       make_unique<unsigned char[]>(crypto_pwhash_SALTBYTES);
   randombytes_buf(sendSalt.get(), crypto_pwhash_SALTBYTES);
@@ -638,8 +656,9 @@ void Connection::handshake(string const &password) {
 
   unique_ptr<unsigned char[]> sendHeader = make_unique<unsigned char[]>(
       crypto_secretstream_xchacha20poly1305_HEADERBYTES);
-  crypto_secretstream_xchacha20poly1305_init_push(&sendState, sendHeader.get(),
-                                                  sendKey.get());
+  if (crypto_secretstream_xchacha20poly1305_init_push(
+          &sendState, sendHeader.get(), sendKey.get()) != 0)
+    throw SocketException("Failed to initialize sending state");
   sendRaw(sendHeader.get(), crypto_secretstream_xchacha20poly1305_HEADERBYTES);
 
   unique_ptr<unsigned char[]> recvSalt =
@@ -659,9 +678,8 @@ void Connection::handshake(string const &password) {
   unique_ptr<unsigned char[]> recvHeader = make_unique<unsigned char[]>(
       crypto_secretstream_xchacha20poly1305_HEADERBYTES);
   recvRaw(recvHeader.get(), crypto_secretstream_xchacha20poly1305_HEADERBYTES);
-  if (crypto_secretstream_xchacha20poly1305_init_pull(
-          &recvState, recvHeader.get(), recvKey.get()) != 0)
-    throw SocketException("Password mismatch");
+  return crypto_secretstream_xchacha20poly1305_init_pull(
+             &recvState, recvHeader.get(), recvKey.get()) == 0;
 }
 
 void Connection::wait(size_t n) {
@@ -669,13 +687,14 @@ void Connection::wait(size_t n) {
 }
 
 #ifdef __linux__
-unique_ptr<Connection> makeClient(string const &host, uint16_t port,
-                                  string const &password) {
-  return make_unique<linux::Connection>(host, port, password);
+unique_ptr<Connection> Connection::makeClient(string const &host, uint16_t port,
+                                              std::atomic_bool const &stop) {
+  return make_unique<linux::Connection>(host, port, stop);
 }
 
-unique_ptr<Server> makeServer(uint16_t port, string const &password) {
-  return make_unique<linux::Server>(port, password);
+unique_ptr<Server> Server::makeServer(uint16_t port, string const &password,
+                                      std::atomic_bool const &stop) {
+  return make_unique<linux::Server>(port, password, stop);
 }
 #elif
 #error "operating system not supported/recognized"

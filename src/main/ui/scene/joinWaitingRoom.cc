@@ -51,18 +51,18 @@ class JoinWaitingRoom final {
   JoinWaitingRoom &operator=(JoinWaitingRoom &&) noexcept = delete;
 
   void draw() noexcept {
-    // switch (client->state) {
-    //   case Client::State::STARTING: {
-    //     waiting_.draw();
-    //     break;
-    //   }
-    //   case Client::State::ERROR: {
-    //     error_.draw();
-    //     errorMessage_.text = converter_.from_bytes(client->errorMessage);
-    //     errorMessage_.draw();
-    //     break;
-    //   }
-    // }
+    switch (client->state) {
+      case Client::State::STARTING: {
+        waiting_.draw();
+        break;
+      }
+      case Client::State::ERROR: {
+        error_.draw();
+        errorMessage_.text = converter_.from_bytes(client->errorMessage);
+        errorMessage_.draw();
+        break;
+      }
+    }
     back_.draw();
   }
 
@@ -104,7 +104,7 @@ class JoinWaitingRoom final {
 
 void joinWaitingRoom(u32string address, u32string password) noexcept {
   JoinWaitingRoom joinWaitingRoom;
-  client = make_unique<Client>();
+  client = make_unique<Client>(address, password);
   while (true) {
     SDL_Event event;
     while (SDL_PollEvent(&event) != 0) {
@@ -129,10 +129,10 @@ void joinWaitingRoom(u32string address, u32string password) noexcept {
       }
     }
 
-    // if (client->state == Client::State::RUNNING) {
-    //   // TODO
-    //   return;
-    // }
+    if (client->state == Client::State::RUNNING) {
+      // TODO
+      return;
+    }
 
     joinWaitingRoom.draw();
     window->render();

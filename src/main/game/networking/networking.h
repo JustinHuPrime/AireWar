@@ -22,6 +22,7 @@
 
 #include <sodium.h>
 
+#include <atomic>
 #include <cstdint>
 #include <list>
 #include <memory>
@@ -55,6 +56,8 @@ class Connection {
   Connection &operator<<(char32_t data);
   Connection &operator<<(std::u8string data);
   Connection &operator<<(std::u32string data);
+  Connection &operator<<(bool data);
+
   Connection &operator>>(uint8_t &data);
   Connection &operator>>(uint16_t &data);
   Connection &operator>>(uint32_t &data);
@@ -69,18 +72,19 @@ class Connection {
   Connection &operator>>(char32_t &data);
   Connection &operator>>(std::u8string &data);
   Connection &operator>>(std::u32string &data);
+  Connection &operator>>(bool &data);
 
   Connection &flush();
 
   static std::unique_ptr<Connection> makeClient(std::string const &host,
                                                 uint16_t port,
-                                                std::string const &password);
+                                                std::atomic_bool const &stop);
+
+  bool handshake(std::string const &password);
 
  protected:
   virtual void sendRaw(void const *data, size_t length) = 0;
   virtual void recvRaw(void *data, size_t length) = 0;
-
-  void handshake(std::string const &password);
 
  private:
   std::list<uint8_t> sendBuf;
@@ -109,7 +113,8 @@ class Server {
   virtual std::unique_ptr<Connection> accept() = 0;
 
   static std::unique_ptr<Server> makeServer(uint16_t port,
-                                            std::string const &password);
+                                            std::string const &password,
+                                            std::atomic_bool const &stop);
 };
 }  // namespace airewar::game::networking
 

@@ -51,9 +51,9 @@ class FD final {
 
 class Connection : public airewar::game::networking::Connection {
  public:
-  explicit Connection(FD fd, std::string const &password) noexcept;
+  explicit Connection(FD fd, std::atomic_bool const &stop) noexcept;
   Connection(std::string const &address, uint16_t port,
-             std::string const &password);
+             std::atomic_bool const &stop);
   Connection(Connection const &) noexcept = delete;
   Connection(Connection &&) noexcept = default;
 
@@ -68,11 +68,13 @@ class Connection : public airewar::game::networking::Connection {
 
  private:
   FD fd_;
+  std::atomic_bool const &stop_;
 };
 
 class Server : public airewar::game::networking::Server {
  public:
-  explicit Server(uint16_t port, std::string const &password);
+  explicit Server(uint16_t port, std::string const &password,
+                  std::atomic_bool const &stop);
   Server(Server const &) noexcept = delete;
   Server(Server &&) noexcept = default;
 
@@ -86,6 +88,7 @@ class Server : public airewar::game::networking::Server {
  private:
   FD fd_;
   std::string const &password_;
+  std::atomic_bool const &stop_;
 };
 }  // namespace airewar::game::networking::linux
 

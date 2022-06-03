@@ -58,6 +58,9 @@ class Map final {
 
   void initTriangles() noexcept;
 
+  void setSeed(uint64_t) noexcept;
+  uint64_t getSeed() const noexcept;
+
  private:
   class Node {
    public:
@@ -137,6 +140,7 @@ class Map final {
   };
 
   std::unique_ptr<Node> root_;
+  uint64_t seed_;
 };
 }  // namespace airewar::game
 

@@ -24,6 +24,7 @@
 #include "game/client.h"
 #include "game/server.h"
 #include "ui/components.h"
+#include "ui/scene/hostGameMenu.h"
 #include "ui/window.h"
 
 using namespace std;
@@ -51,36 +52,35 @@ class HostWaitingRoom final {
   HostWaitingRoom &operator=(HostWaitingRoom &&) noexcept = delete;
 
   void draw() noexcept {
-    // switch (server->state) {
-    //   case Server::State::STARTING: {
-    //     waiting_.draw();
-    //     break;
-    //   }
-    //   case Server::State::ERROR: {
-    //     error_.draw();
-    //     errorMessage_.text = converter_.from_bytes(server->errorMessage);
-    //     errorMessage_.draw();
-    //     break;
-    //   }
-    //   case Server::State::RUNNING: {
-    //     if (client) {
-    //       switch (client->state) {
-    //         case Client::State::STARTING: {
-    //           waiting_.draw();
-    //           break;
-    //         }
-    //         case Client::State::ERROR: {
-    //           error_.draw();
-    //           errorMessage_.text =
-    //           converter_.from_bytes(client->errorMessage);
-    //           errorMessage_.draw();
-    //           break;
-    //         }
-    //       }
-    //       break;
-    //     }
-    //   }
-    // }
+    switch (server->state) {
+      case Server::State::STARTING: {
+        waiting_.draw();
+        break;
+      }
+      case Server::State::ERROR: {
+        error_.draw();
+        errorMessage_.text = converter_.from_bytes(server->errorMessage);
+        errorMessage_.draw();
+        break;
+      }
+      case Server::State::RUNNING: {
+        if (client) {
+          switch (client->state) {
+            case Client::State::STARTING: {
+              waiting_.draw();
+              break;
+            }
+            case Client::State::ERROR: {
+              error_.draw();
+              errorMessage_.text = converter_.from_bytes(client->errorMessage);
+              errorMessage_.draw();
+              break;
+            }
+          }
+          break;
+        }
+      }
+    }
     back_.draw();
   }
 
@@ -122,7 +122,7 @@ class HostWaitingRoom final {
 
 void hostWaitingRoom(u32string password) noexcept {
   HostWaitingRoom hostWaitingRoom;
-  server = make_unique<Server>();
+  server = make_unique<Server>(password);
 
   while (true) {
     SDL_Event event;
@@ -143,7 +143,7 @@ void hostWaitingRoom(u32string password) noexcept {
             case HostWaitingRoom::Action::BACK: {
               client.reset();
               server.reset();
-              return;
+              return hostGameMenu();
             }
           }
           break;
@@ -151,12 +151,12 @@ void hostWaitingRoom(u32string password) noexcept {
       }
     }
 
-    // if (server->state == Server::State::RUNNING && !client) {
-    //   client = make_unique<Client>(U"localhost", password);
-    // } else if (client && client->state == Client::State::RUNNING) {
-    //   // TODO
-    //   return;
-    // }
+    if (server->state == Server::State::RUNNING && !client) {
+      client = make_unique<Client>(U"localhost", password);
+    } else if (client && client->state == Client::State::RUNNING) {
+      // TODO
+      return;
+    }
 
     hostWaitingRoom.draw();
     window->render();

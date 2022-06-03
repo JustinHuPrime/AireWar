@@ -34,6 +34,7 @@
 #include <utility>
 
 #include "util/exceptions/socketException.h"
+#include "util/exceptions/stopFlag.h"
 
 using namespace std;
 using namespace airewar::util::exceptions;
@@ -64,13 +65,12 @@ FD::operator bool() const noexcept { return fd_ != -1; }
 
 int FD::get() noexcept { return fd_; }
 
-Connection::Connection(FD fd, string const &password) noexcept
-    : fd_(std::move(fd_)) {
-  handshake(password);
-}
+Connection::Connection(FD fd, atomic_bool const &stop) noexcept
+    : fd_(std::move(fd_)), stop_(stop) {}
 
 Connection::Connection(string const &address, uint16_t port,
-                       string const &password) {
+                       atomic_bool const &stop)
+    : stop_(stop) {
   struct addrinfo hints;
   memset(&hints, 0, sizeof(hints));
   hints.ai_family = AF_UNSPEC;
@@ -101,9 +101,12 @@ Connection::Connection(string const &address, uint16_t port,
       memset(&fds, 0, sizeof(fds));
       fds.fd = attempt.get();
       fds.events = POLLOUT;
+
       bool connecting = true;
       while (connecting) {
-        switch (poll(&fds, 1, POLL_TIMEOUT)) {
+        int pollResult = poll(&fds, 1, POLL_TIMEOUT);
+        if (stop_) throw StopFlag();
+        switch (pollResult) {
           case 0: {
             break;
           }
@@ -131,8 +134,6 @@ Connection::Connection(string const &address, uint16_t port,
 
   if (!fd_)
     throw SocketException("Could not connect to server: "s + strerror(errno));
-
-  handshake(password);
 }
 
 void Connection::sendRaw(void const *data, size_t length) {
@@ -142,8 +143,9 @@ void Connection::sendRaw(void const *data, size_t length) {
     memset(&fds, 0, sizeof(fds));
     fds.fd = fd_.get();
     fds.events = POLLOUT;
-
     int pollResult = poll(&fds, 1, POLL_TIMEOUT);
+    if (stop_) throw StopFlag();
+
     switch (pollResult) {
       case 0: {
         break;
@@ -172,8 +174,9 @@ void Connection::recvRaw(void *data, size_t length) {
     memset(&fds, 0, sizeof(fds));
     fds.fd = fd_.get();
     fds.events = POLLIN;
-
     int pollResult = poll(&fds, 1, POLL_TIMEOUT);
+    if (stop_) throw StopFlag();
+
     switch (pollResult) {
       case 0: {
         break;
@@ -194,7 +197,8 @@ void Connection::recvRaw(void *data, size_t length) {
   }
 }
 
-Server::Server(uint16_t port, string const &password) : password_(password) {
+Server::Server(uint16_t port, string const &password, atomic_bool const &stop)
+    : password_(password), stop_(stop) {
   struct addrinfo hints;
   memset(&hints, 0, sizeof(hints));
   hints.ai_family = AF_UNSPEC;
@@ -235,13 +239,16 @@ unique_ptr<airewar::game::networking::Connection> Server::accept() {
   memset(&fds, 0, sizeof(fds));
   fds.fd = fd_.get();
   fds.events = POLLIN;
-  switch (poll(&fds, 1, POLL_TIMEOUT)) {
+  int pollResult = poll(&fds, 1, POLL_TIMEOUT);
+  if (stop_) throw StopFlag();
+
+  switch (pollResult) {
     case 0: {
       return nullptr;
     }
     case 1: {
       return make_unique<Connection>(
-          FD(accept4(fd_.get(), nullptr, nullptr, SOCK_NONBLOCK)), password_);
+          FD(accept4(fd_.get(), nullptr, nullptr, SOCK_NONBLOCK)), stop_);
     }
     default: {
       throw SocketException("Poll failed: "s + strerror(errno));

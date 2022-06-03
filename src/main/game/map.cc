@@ -42,6 +42,10 @@ constexpr vec3 sphericalToCartesian(float lat, float lon) {
 
 void Map::initTriangles() noexcept { root_ = make_unique<IcosaNode>(); }
 
+void Map::setSeed(uint64_t seed) noexcept { seed_ = seed; }
+
+uint64_t Map::getSeed() const noexcept { return seed_; }
+
 Map::IcosaNode::IcosaNode() noexcept : children_() {
   // north polar cap
   for (size_t idx : {0, 1, 2, 3, 4})

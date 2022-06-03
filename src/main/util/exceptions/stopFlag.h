@@ -17,15 +17,21 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-#include "util/exceptions/socketException.h"
-
-using namespace std;
+#ifndef AIREWAR_UTIL_EXCEPTIONS_STOPFLAG_H_
+#define AIREWAR_UTIL_EXCEPTIONS_STOPFLAG_H_
 
 namespace airewar::util::exceptions {
-SocketException::SocketException(string const &message) noexcept
-    : message_(message) {}
+class StopFlag final {
+ public:
+  StopFlag() noexcept = default;
+  StopFlag(StopFlag const &) noexcept = default;
+  StopFlag(StopFlag &&) noexcept = default;
 
-char const *SocketException::what() const noexcept { return message_.c_str(); }
+  ~StopFlag() noexcept = default;
 
-SocketException::operator string() const noexcept { return message_; }
+  StopFlag &operator=(StopFlag const &) noexcept = default;
+  StopFlag &operator=(StopFlag &&) noexcept = default;
+};
 }  // namespace airewar::util::exceptions
+
+#endif  // AIREWAR_UTIL_EXCEPTIONS_STOPFLAG_H_
