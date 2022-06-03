@@ -37,7 +37,7 @@ class Connection {
   Connection(Connection const &) noexcept = delete;
   Connection(Connection &&) noexcept = default;
 
-  virtual ~Connection() noexcept = default;
+  virtual ~Connection() noexcept;
 
   Connection &operator=(Connection const &) noexcept = delete;
   Connection &operator=(Connection &&) noexcept = default;

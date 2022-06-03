@@ -28,6 +28,7 @@
 #include <unistd.h>
 
 #include <algorithm>
+#include <cassert>
 #include <cstring>
 #include <memory>
 #include <string>
@@ -66,7 +67,7 @@ FD::operator bool() const noexcept { return fd_ != -1; }
 int FD::get() noexcept { return fd_; }
 
 Connection::Connection(FD fd, atomic_bool const &stop) noexcept
-    : fd_(std::move(fd_)), stop_(stop) {}
+    : fd_(std::move(fd)), stop_(stop) {}
 
 Connection::Connection(string const &address, uint16_t port,
                        atomic_bool const &stop)
@@ -137,12 +138,13 @@ Connection::Connection(string const &address, uint16_t port,
 }
 
 void Connection::sendRaw(void const *data, size_t length) {
+  struct pollfd fds;
+  memset(&fds, 0, sizeof(fds));
+  fds.fd = fd_.get();
+  fds.events = POLLOUT;
+
   size_t curr = 0;
   while (curr != length) {
-    struct pollfd fds;
-    memset(&fds, 0, sizeof(fds));
-    fds.fd = fd_.get();
-    fds.events = POLLOUT;
     int pollResult = poll(&fds, 1, POLL_TIMEOUT);
     if (stop_) throw StopFlag();
 
@@ -154,8 +156,20 @@ void Connection::sendRaw(void const *data, size_t length) {
         ssize_t sizeRead =
             ::send(fd_.get(), reinterpret_cast<char const *>(data) + curr,
                    length - curr, 0);
-        if (sizeRead == -1)
-          throw SocketException("Write failed: "s + strerror(errno));
+        if (sizeRead == -1) {
+          switch (int errnoSave = errno; errnoSave) {
+            case EAGAIN:
+#if EAGAIN != EWOULDBLOCK
+            case EWOULDBLOCK:
+#endif
+            case EINPROGRESS: {
+              continue;
+            }
+            default: {
+              throw SocketException("Write failed: "s + strerror(errnoSave));
+            }
+          }
+        }
 
         curr += sizeRead;
         break;
@@ -168,12 +182,13 @@ void Connection::sendRaw(void const *data, size_t length) {
 }
 
 void Connection::recvRaw(void *data, size_t length) {
+  struct pollfd fds;
+  memset(&fds, 0, sizeof(fds));
+  fds.fd = fd_.get();
+  fds.events = POLLIN;
+
   size_t curr = 0;
   while (curr != length) {
-    struct pollfd fds;
-    memset(&fds, 0, sizeof(fds));
-    fds.fd = fd_.get();
-    fds.events = POLLIN;
     int pollResult = poll(&fds, 1, POLL_TIMEOUT);
     if (stop_) throw StopFlag();
 
@@ -184,8 +199,20 @@ void Connection::recvRaw(void *data, size_t length) {
       case 1: {
         ssize_t sizeRead = ::recv(
             fd_.get(), reinterpret_cast<char *>(data) + curr, length - curr, 0);
-        if (sizeRead == -1)
-          throw SocketException("Read failed: "s + strerror(errno));
+        if (sizeRead == -1) {
+          switch (int errnoSave = errno; errnoSave) {
+            case EAGAIN:
+#if EAGAIN != EWOULDBLOCK
+            case EWOULDBLOCK:
+#endif
+            case EINPROGRESS: {
+              continue;
+            }
+            default: {
+              throw SocketException("Read failed: "s + strerror(errnoSave));
+            }
+          }
+        }
 
         curr += sizeRead;
         break;
@@ -247,8 +274,12 @@ unique_ptr<airewar::game::networking::Connection> Server::accept() {
       return nullptr;
     }
     case 1: {
-      return make_unique<Connection>(
-          FD(accept4(fd_.get(), nullptr, nullptr, SOCK_NONBLOCK)), stop_);
+      if (int retval = accept4(fd_.get(), nullptr, nullptr, SOCK_NONBLOCK);
+          retval != -1) {
+        return make_unique<Connection>(FD(retval), stop_);
+      } else {
+        throw SocketException("Accept failed: "s + strerror(errno));
+      }
     }
     default: {
       throw SocketException("Poll failed: "s + strerror(errno));

@@ -37,6 +37,14 @@ using namespace std;
 using namespace airewar::util::exceptions;
 
 namespace airewar::game::networking {
+Connection::~Connection() noexcept {
+  try {
+    flush();
+  } catch (...) {
+    // swallow exception - this is a destructor
+  }
+}
+
 Connection &Connection::operator<<(uint8_t data) {
   sendBuf.push_back('b');
   sendBuf.push_back(data);

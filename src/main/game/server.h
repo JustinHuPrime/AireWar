@@ -40,8 +40,10 @@ class Server final {
       STARTING,
       RUNNING,
       DONE,
+      ERROR,
     };
     std::atomic<State> state;
+    std::string errorMessage;
 
     explicit Connection(
         Server &server,

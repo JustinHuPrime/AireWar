@@ -71,8 +71,10 @@ void Server::Connection::run() noexcept {
     }
 
     *connection_ << server_.map_.getSeed();
+    connection_->flush();
   } catch (SocketException const &e) {
-    // TODO
+    errorMessage = static_cast<string>(e);
+    state = State::ERROR;
     return;
   } catch (StopFlag const &) {
     return;
