@@ -42,7 +42,7 @@ constexpr vec3 sphericalToCartesian(float lat, float lon) {
 
 void Map::initTriangles() noexcept { root_ = make_unique<IcosaNode>(); }
 
-void Map::setSeed(uint64_t seed) noexcept { seed_ = seed; }
+void Map::generate(uint64_t seed) noexcept { seed_ = seed; }
 
 uint64_t Map::getSeed() const noexcept { return seed_; }
 

@@ -58,7 +58,7 @@ class Map final {
 
   void initTriangles() noexcept;
 
-  void setSeed(uint64_t) noexcept;
+  void generate(uint64_t) noexcept;
   uint64_t getSeed() const noexcept;
 
  private:

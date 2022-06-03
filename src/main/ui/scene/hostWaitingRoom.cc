@@ -39,6 +39,7 @@ class HostWaitingRoom final {
         errorMessage_(TextField2D::centered(
             resources->orbitron, resources->errorTextField,
             {1.0f, 0.0f, 0.0f, 1.0f}, 0.5f, layout(2, 4))),
+        generating_(resources->generatingMapBackground),
         back_(Button2D::centered(resources->backOn, resources->backOff, 0.5f,
                                  layout(3, 4))),
         clicked_(nullptr),
@@ -74,6 +75,10 @@ class HostWaitingRoom final {
               error_.draw();
               errorMessage_.text = converter_.from_bytes(client->errorMessage);
               errorMessage_.draw();
+              break;
+            }
+            case Client::State::GENERATING_MAP: {
+              generating_.draw();
               break;
             }
           }
@@ -115,6 +120,7 @@ class HostWaitingRoom final {
   Background2D waiting_;
   Background2D error_;
   TextField2D errorMessage_;
+  Background2D generating_;
   Button2D back_;
   Button2D *clicked_;
   wstring_convert<codecvt_utf8<char32_t>, char32_t> converter_;

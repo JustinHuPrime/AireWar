@@ -319,6 +319,7 @@ class ResourceManager final {
   Texture2D connectingBackground;
   Texture2D errorBackground;
   Texture2D errorTextField;
+  Texture2D generatingMapBackground;
 
   std::unique_ptr<SDL_Cursor, decltype(&SDL_FreeCursor)> arrowCursor;
 

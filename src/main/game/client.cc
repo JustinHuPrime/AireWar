@@ -72,8 +72,8 @@ void Client::run() noexcept {
 
     uint64_t seed;
     *connection_ >> seed;
-    map.setSeed(seed);
     state = State::GENERATING_MAP;
+    map.generate(seed);
 
     // TODO: generate map
   } catch (SocketException const &e) {

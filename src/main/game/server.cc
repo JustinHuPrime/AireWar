@@ -102,7 +102,7 @@ Server::~Server() {
 void Server::run() noexcept {
   try {
     map_.initTriangles();
-    map_.setSeed(rng_());
+    map_.generate(rng_());
     // TODO: generate map
 
     server_ =

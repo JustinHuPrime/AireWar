@@ -441,6 +441,8 @@ void ResourceManager::loadGame() {
       Texture2D(path("waitingRoom") / "connectingBackground.tga");
   errorBackground = Texture2D(path("waitingRoom") / "errorBackground.tga");
   errorTextField = Texture2D(path("waitingRoom") / "errorTextField.tga");
+  generatingMapBackground =
+      Texture2D(path("waitingRoom") / "generatingMapBackground.tga");
 
   arrowCursor.reset(SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW));
 
