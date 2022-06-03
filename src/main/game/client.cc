@@ -49,8 +49,6 @@ Client::~Client() noexcept {
 
 void Client::run() noexcept {
   try {
-    map.initTriangles();
-
     wstring_convert<codecvt_utf8<char32_t>, char32_t> converter;
     string addressStr = converter.to_bytes(address_);
     connection_ = networking::Connection::makeClient(
@@ -75,7 +73,7 @@ void Client::run() noexcept {
     state = State::GENERATING_MAP;
     map.generate(seed);
 
-    // TODO: generate map
+    // TODO: rest of game logic
   } catch (SocketException const &e) {
     errorMessage = static_cast<string>(e);
     state = State::ERROR;

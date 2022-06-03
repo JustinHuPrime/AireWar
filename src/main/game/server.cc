@@ -72,6 +72,8 @@ void Server::Connection::run() noexcept {
 
     *connection_ << server_.map_.getSeed();
     connection_->flush();
+
+    // TODO: rest of game logic
   } catch (SocketException const &e) {
     errorMessage = static_cast<string>(e);
     state = State::ERROR;
@@ -101,9 +103,7 @@ Server::~Server() {
 
 void Server::run() noexcept {
   try {
-    map_.initTriangles();
     map_.generate(rng_());
-    // TODO: generate map
 
     server_ =
         networking::Server::makeServer(networking::PORT, password_, stop_);
@@ -124,8 +124,6 @@ void Server::run() noexcept {
         });
       }
     }
-
-    return;
   } catch (SocketException const &e) {
     errorMessage = static_cast<string>(e);
     state = State::ERROR;

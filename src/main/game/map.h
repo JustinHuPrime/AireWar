@@ -56,8 +56,6 @@ class Map final {
   Map &operator=(Map const &) noexcept = default;
   Map &operator=(Map &&) noexcept = default;
 
-  void initTriangles() noexcept;
-
   void generate(uint64_t) noexcept;
   uint64_t getSeed() const noexcept;
 
@@ -105,7 +103,7 @@ class Map final {
 
     void projectOntoSphere() noexcept override;
 
-   protected:
+   private:
     std::array<glm::vec3, 3> vertices_;
   };
   class TriangleNode final : public TriangularNode {

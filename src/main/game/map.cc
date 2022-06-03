@@ -23,57 +23,168 @@
 #include <execution>
 
 #include "glm/gtc/constants.hpp"
+#include "util/coordinates.h"
 
 using namespace std;
 using namespace glm;
+using namespace airewar::util;
 
 namespace airewar::game {
-namespace {
-/**
- * convert lat-lon-radius to cartesian coordinates
- *
- * @param lat latitude, in radians north
- * @param lon longitude, in radians east
- */
-constexpr vec3 sphericalToCartesian(float lat, float lon) {
-  return Map::RADIUS * vec3{sin(lon) * cos(lat), sin(lat), cos(lon) * cos(lat)};
+
+void Map::generate(uint64_t seed) noexcept {
+  seed_ = seed;
+  root_ = make_unique<IcosaNode>();
+
+  // step 1: generate plates and heightmap (see
+  // https://www.youtube.com/watch?v=x_Tn66PvTn4)
+
+  // step 1.1: generate plate boundaries
+
+  // step 1.1.1: generate major plates
+
+  // TODO
+
+  // step 1.1.2: generate minor plates
+
+  // TODO
+
+  // NOTE: maybe use a voronoi diagram thing?
+
+  // step 1.2: chose continental and oceanic plates
+
+  // TODO
+
+  // step 1.3: set plate motion (transform and rotational)
+
+  // TODO
+
+  // step 1.4: generate heightmap
+
+  // step 1.4.1: continents + coastal islands
+
+  // TODO
+
+  // step 1.4.2: plate boundary islands
+
+  // TODO
+
+  // step 1.4.3: hotspot island arcs
+
+  // TODO
+
+  // step 2: calculate prevailing winds (see
+  // https://www.youtube.com/watch?v=LifRswfCxFU)
+
+  // step 2.1: generate trade winds
+
+  // TODO
+
+  // step 2.2: generate polar cells
+
+  // TODO
+
+  // step 3.3: generate ferrel cell
+
+  // TODO
+
+  // step 3: calculate currents (see
+  // https://www.youtube.com/watch?v=n_E9UShtyY8)
+
+  // step 3.1: equatorial gyres
+
+  // TODO
+
+  // step 3.2: ferrel gyres
+
+  // TODO
+
+  // step 3.3: circumpolar currents
+
+  // TODO
+
+  // step 3.4: fill in gaps
+
+  // TODO
+
+  // step 3.5: ENSO event zones
+
+  // TODO
+
+  // step 4: calculate biomes and climate (see
+  // https://www.youtube.com/watch?v=5lCbxMZJ4zA and
+  // https://www.youtube.com/watch?v=fag48Nh8PXE)
+
+  // step 4.1: preperatory calculations
+
+  // step 4.1.1: precipitation levels
+
+  // TODO
+
+  // step 4.1.2: temperature levels
+
+  // TODO
+
+  // step 4.1.3: orthographic lift
+
+  // TODO
+
+  // step 4.2: place biomes
+
+  // step 4.2.1: mountain climates
+
+  // TODO
+
+  // step 4.2.2: tropical climates
+
+  // TODO
+
+  // step 4.2.3: continental climates
+
+  // TODO
 }
-}  // namespace
-
-void Map::initTriangles() noexcept { root_ = make_unique<IcosaNode>(); }
-
-void Map::generate(uint64_t seed) noexcept { seed_ = seed; }
 
 uint64_t Map::getSeed() const noexcept { return seed_; }
 
 Map::IcosaNode::IcosaNode() noexcept : children_() {
+  // NOTE: assumes at least one level of triangle nodes before the leaf nodes
+
   // north polar cap
   for (size_t idx : {0, 1, 2, 3, 4})
     children_[idx] = make_unique<TriangleNode>(array<vec3, 3>{
-        sphericalToCartesian(pi<float>() / 2.0f, 0.0f),
-        sphericalToCartesian(atan(0.5f), idx * pi<float>() / 5.0f),
-        sphericalToCartesian(atan(0.5f), (idx + 1) * pi<float>() / 5.0f)});
+        sphericalToCartesian(half_pi<float>(), 0.0f, Map::RADIUS),
+        sphericalToCartesian(atan(0.5f), idx * two_pi<float>() / 5.0f,
+                             Map::RADIUS),
+        sphericalToCartesian(atan(0.5f), (idx + 1) * two_pi<float>() / 5.0f,
+                             Map::RADIUS)});
 
   // south polar cap
   for (size_t idx : {0, 1, 2, 3, 4})
     children_[idx + 5] = make_unique<TriangleNode>(array<vec3, 3>{
-        sphericalToCartesian(-pi<float>() / 2.0f, 0.0f),
-        sphericalToCartesian(-atan(0.5f), (idx + 1.5f) * pi<float>() / 5.0f),
-        sphericalToCartesian(-atan(0.5f), (idx + 0.5f) * pi<float>() / 5.0f)});
+        sphericalToCartesian(-half_pi<float>(), 0.0f, Map::RADIUS),
+        sphericalToCartesian(-atan(0.5f), (idx + 1.5f) * two_pi<float>() / 5.0f,
+                             Map::RADIUS),
+        sphericalToCartesian(-atan(0.5f), (idx + 0.5f) * two_pi<float>() / 5.0f,
+                             Map::RADIUS)});
 
   // pointy north half of equator
   for (size_t idx : {0, 1, 2, 3, 4})
     children_[idx + 10] = make_unique<TriangleNode>(array<vec3, 3>{
-        sphericalToCartesian(atan(0.5f), idx * pi<float>() / 5.0f),
-        sphericalToCartesian(-atan(0.5f), (idx - 0.5f) * pi<float>() / 5.0f),
-        sphericalToCartesian(-atan(0.5f), (idx + 0.5f) * pi<float>() / 5.0f)});
+        sphericalToCartesian(atan(0.5f), idx * two_pi<float>() / 5.0f,
+                             Map::RADIUS),
+        sphericalToCartesian(-atan(0.5f), (idx - 0.5f) * two_pi<float>() / 5.0f,
+                             Map::RADIUS),
+        sphericalToCartesian(-atan(0.5f), (idx + 0.5f) * two_pi<float>() / 5.0f,
+                             Map::RADIUS)});
 
   // flat north half of equator
   for (size_t idx : {0, 1, 2, 3, 4})
     children_[idx + 15] = make_unique<TriangleNode>(array<vec3, 3>{
-        sphericalToCartesian(atan(0.5f), idx * pi<float>() / 5.0f),
-        sphericalToCartesian(-atan(0.5f), (idx + 0.5f) * pi<float>() / 5.0f),
-        sphericalToCartesian(atan(0.5f), (idx + 1.0f) * pi<float>() / 5.0f)});
+        sphericalToCartesian(atan(0.5f), idx * two_pi<float>() / 5.0f,
+                             Map::RADIUS),
+        sphericalToCartesian(-atan(0.5f), (idx + 0.5f) * two_pi<float>() / 5.0f,
+                             Map::RADIUS),
+        sphericalToCartesian(atan(0.5f), (idx + 1.0f) * two_pi<float>() / 5.0f,
+                             Map::RADIUS)});
 
   projectOntoSphere();
 }
@@ -91,24 +202,24 @@ void Map::TriangularNode::projectOntoSphere() noexcept {
 
 Map::TriangleNode::TriangleNode(array<vec3, 3> const &vertices) noexcept
     : TriangularNode(vertices), children_() {
-  vec3 half0 = (vertices_[1] + vertices_[2]) / 2.0f;
-  vec3 half1 = (vertices_[0] + vertices_[2]) / 2.0f;
-  vec3 half2 = (vertices_[0] + vertices_[1]) / 2.0f;
-  if (distance(vertices_[0], vertices_[1]) <= Map::MAX_TILE_SIZE) {
+  vec3 half0 = (vertices[1] + vertices[2]) / 2.0f;
+  vec3 half1 = (vertices[0] + vertices[2]) / 2.0f;
+  vec3 half2 = (vertices[0] + vertices[1]) / 2.0f;
+  if (distance(vertices[0], vertices[1]) <= Map::MAX_TILE_SIZE) {
     children_[0] =
-        make_unique<LeafNode>(array<vec3, 3>{vertices_[0], half2, half1});
+        make_unique<LeafNode>(array<vec3, 3>{vertices[0], half2, half1});
     children_[1] =
-        make_unique<LeafNode>(array<vec3, 3>{vertices_[1], half0, half2});
+        make_unique<LeafNode>(array<vec3, 3>{vertices[1], half0, half2});
     children_[2] =
-        make_unique<LeafNode>(array<vec3, 3>{vertices_[2], half1, half0});
+        make_unique<LeafNode>(array<vec3, 3>{vertices[2], half1, half0});
     children_[3] = make_unique<LeafNode>(array<vec3, 3>{half0, half1, half2});
   } else {
     children_[0] =
-        make_unique<TriangleNode>(array<vec3, 3>{vertices_[0], half2, half1});
+        make_unique<TriangleNode>(array<vec3, 3>{vertices[0], half2, half1});
     children_[1] =
-        make_unique<TriangleNode>(array<vec3, 3>{vertices_[1], half0, half2});
+        make_unique<TriangleNode>(array<vec3, 3>{vertices[1], half0, half2});
     children_[2] =
-        make_unique<TriangleNode>(array<vec3, 3>{vertices_[2], half1, half0});
+        make_unique<TriangleNode>(array<vec3, 3>{vertices[2], half1, half0});
     children_[3] =
         make_unique<TriangleNode>(array<vec3, 3>{half0, half1, half2});
   }
