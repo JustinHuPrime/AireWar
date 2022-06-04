@@ -22,15 +22,24 @@
 
 #include <array>
 #include <cstdint>
+#include <functional>
+#include <iterator>
 #include <memory>
+#include <vector>
 
 #include "glm/glm.hpp"
 
 namespace airewar::game {
 class Map final {
+ private:
+  struct Plate;
+
  public:
   struct Tile final {
-    Tile() noexcept = default;
+    glm::vec3 centroid;
+    Plate const *plate;
+
+    Tile(glm::vec3 const &centroid) noexcept;
     Tile(Tile const &) noexcept = default;
     Tile(Tile &&) noexcept = default;
 
@@ -43,9 +52,21 @@ class Map final {
   /** radius of the world in meters (= 6,371 km) */
   static constexpr float RADIUS = 6'371'000.0f;
 
-  /** maximum side length of a leaf node (= 50 km, ends up with 2621360
+  /** maximum side length of a leaf node (= 50 km, ends up with 2621440
    * triangles) */
   static constexpr float MAX_TILE_SIZE = 50'000.0f;
+
+  /** number of major plates to generate */
+  static constexpr size_t NUM_MAJOR_PLATES = 8;
+
+  /** number of minor plates to generate */
+  static constexpr size_t NUM_MINOR_PLATES = 16;
+
+  /** how much larger should major plates be */
+  static constexpr float MAJOR_PLATE_SIZE_MULTIPLIER = 2.0f;
+
+  // /** intersection checking tolerance */
+  // static constexpr float INTERSECT_DELTA = 0.001f;
 
   Map() noexcept = default;
   Map(Map const &) noexcept = default;
@@ -71,7 +92,14 @@ class Map final {
     Node &operator=(Node const &) noexcept = default;
     Node &operator=(Node &&) noexcept = default;
 
+    virtual Tile &operator[](glm::vec3 const &ray) noexcept = 0;
+    virtual Tile const &operator[](glm::vec3 const &ray) const noexcept = 0;
+
     virtual void projectOntoSphere() noexcept = 0;
+
+    virtual bool intersectsRay(glm::vec3 const &ray) noexcept = 0;
+
+    virtual void forEach(std::function<void(Tile &)> const &) noexcept = 0;
   };
 
   class IcosaNode final : public Node {
@@ -85,7 +113,14 @@ class Map final {
     IcosaNode &operator=(IcosaNode const &) noexcept = default;
     IcosaNode &operator=(IcosaNode &&) noexcept = default;
 
+    Tile &operator[](glm::vec3 const &ray) noexcept override;
+    Tile const &operator[](glm::vec3 const &ray) const noexcept override;
+
     void projectOntoSphere() noexcept override;
+
+    bool intersectsRay(glm::vec3 const &ray) noexcept override;
+
+    void forEach(std::function<void(Tile &)> const &) noexcept override;
 
    private:
     std::array<std::unique_ptr<Node>, 20> children_;
@@ -103,6 +138,8 @@ class Map final {
 
     void projectOntoSphere() noexcept override;
 
+    bool intersectsRay(glm::vec3 const &ray) noexcept override;
+
    private:
     std::array<glm::vec3, 3> vertices_;
   };
@@ -117,7 +154,12 @@ class Map final {
     TriangleNode &operator=(TriangleNode const &) noexcept = default;
     TriangleNode &operator=(TriangleNode &&) noexcept = default;
 
+    Tile &operator[](glm::vec3 const &ray) noexcept override;
+    Tile const &operator[](glm::vec3 const &ray) const noexcept override;
+
     void projectOntoSphere() noexcept override;
+
+    void forEach(std::function<void(Tile &)> const &) noexcept override;
 
    private:
     std::array<std::unique_ptr<Node>, 4> children_;
@@ -133,9 +175,30 @@ class Map final {
     LeafNode &operator=(LeafNode const &) noexcept = default;
     LeafNode &operator=(LeafNode &&) noexcept = default;
 
+    Tile &operator[](glm::vec3 const &ray) noexcept override;
+    Tile const &operator[](glm::vec3 const &ray) const noexcept override;
+
+    void forEach(std::function<void(Tile &)> const &) noexcept override;
+
    private:
     Tile tile_;
   };
+
+  struct Plate {
+    bool major;
+    bool continental;
+    Tile &center;
+
+    Plate(bool major, bool continental, Tile &center) noexcept;
+    Plate(Plate const &) noexcept = default;
+    Plate(Plate &&) noexcept = default;
+
+    ~Plate() noexcept = default;
+
+    Plate &operator=(Plate const &) noexcept = default;
+    Plate &operator=(Plate &&) noexcept = default;
+  };
+  std::vector<Plate> plates;
 
   std::unique_ptr<Node> root_;
   uint64_t seed_;

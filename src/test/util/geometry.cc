@@ -17,7 +17,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-#include "util/coordinates.h"
+#include "util/geometry.h"
 
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -28,9 +28,10 @@
 using namespace glm;
 using namespace airewar::util;
 using namespace Catch;
+using namespace std;
 
 TEST_CASE("spherical to cartesian and back is the identity",
-          "[util] [coordinates]") {
+          "[util] [geometry]") {
   float lat = GENERATE(take(100, random(-half_pi<float>(), half_pi<float>())));
   float lon = GENERATE(take(100, random(0.0f, two_pi<float>())));
   float radius = GENERATE(1.0f, 6'371'000.0f);
@@ -39,9 +40,33 @@ TEST_CASE("spherical to cartesian and back is the identity",
   vec3 cartesian = sphericalToCartesian(lat, lon, radius);
   vec3 spherical_back = cartesianToSpherical(cartesian);
 
-  SECTION("equality test") {
-    REQUIRE(spherical.x == Approx(spherical_back.x));
-    REQUIRE(spherical.y == Approx(spherical_back.y));
-    REQUIRE(spherical.z == Approx(spherical_back.z));
-  }
+  REQUIRE(spherical.x == Approx(spherical_back.x));
+  REQUIRE(spherical.y == Approx(spherical_back.y));
+  REQUIRE(spherical.z == Approx(spherical_back.z));
+}
+
+TEST_CASE("simple ray-triangle intersections", "[util] [geometry]") {
+  array<vec3, 3> triangle = {
+      vec3{0.0f, 0.0f, 1.0f},
+      vec3{1.0f, 0.0f, 1.0f},
+      vec3{0.0f, 1.0f, 1.0f},
+  };
+
+  REQUIRE_FALSE(rayIntersectsTriangle(vec3{0.0f, 0.0f, -1.0f}, triangle));
+  REQUIRE(rayIntersectsTriangle(vec3{0.25f, 0.25f, 1.0f}, triangle));
+}
+
+TEST_CASE("random ray-triangle intersections", "[util] [geometry]") {
+  array<vec3, 3> triangle = {
+      vec3{0.0f, 0.0f, 1.0f},
+      vec3{1.0f, 0.0f, 1.0f},
+      vec3{0.0f, 1.0f, 1.0f},
+  };
+
+  float x = GENERATE(take(100, random(-1.0f, 1.0f)));
+  float y = GENERATE(take(100, random(-1.0f, 1.0f)));
+
+  bool inTriangle = x > 0.0f && y > 0.0f && x < -y + 1;
+
+  REQUIRE(inTriangle == rayIntersectsTriangle(vec3{x, y, 1.0f}, triangle));
 }

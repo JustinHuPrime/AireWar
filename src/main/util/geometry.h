@@ -17,8 +17,10 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-#ifndef AIREWAR_UTIL_COORDINATES_H_
-#define AIREWAR_UTIL_COORDINATES_H_
+#ifndef AIREWAR_UTIL_GEOMETRY_H_
+#define AIREWAR_UTIL_GEOMETRY_H_
+
+#include <array>
 
 #include "glm/glm.hpp"
 #include "glm/gtc/constants.hpp"
@@ -31,9 +33,7 @@ namespace airewar::util {
  * @param lon longitude, in radians east
  * @param radius radius of the planet
  */
-constexpr glm::vec3 sphericalToCartesian(float lat, float lon, float radius) {
-  return radius * glm::vec3{sin(lon) * cos(lat), sin(lat), cos(lon) * cos(lat)};
-}
+glm::vec3 sphericalToCartesian(float lat, float lon, float radius) noexcept;
 
 /**
  * convert cartesian to lat-lon-radius
@@ -41,14 +41,13 @@ constexpr glm::vec3 sphericalToCartesian(float lat, float lon, float radius) {
  * @param v coordinate to convert
  * @return output coordinates as lat-lon-radius
  */
-constexpr glm::vec3 cartesianToSpherical(glm::vec3 const &v) {
-  float radius = sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
-  return glm::vec3{asin(v.y / radius),
-                   atan2(v.x, v.z) < 0.0f
-                       ? atan2(v.x, v.z) + glm::two_pi<float>()
-                       : atan2(v.x, v.z),
-                   radius};
-}
+glm::vec3 cartesianToSpherical(glm::vec3 const &v) noexcept;
+
+/**
+ * does ray intersect the triangle defined by vertices?
+ */
+bool rayIntersectsTriangle(glm::vec3 const &ray,
+                           std::array<glm::vec3, 3> const &vertices) noexcept;
 }  // namespace airewar::util
 
-#endif  // AIREWAR_UTIL_COORDINATES_H_
+#endif  // AIREWAR_UTIL_GEOMETRY_H_
