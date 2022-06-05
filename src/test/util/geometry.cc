@@ -45,7 +45,7 @@ TEST_CASE("spherical to cartesian and back is the identity",
   REQUIRE(spherical.z == Approx(spherical_back.z));
 }
 
-TEST_CASE("simple ray-triangle intersections", "[util] [geometry]") {
+TEST_CASE("simple ray-triangle intersections", "[util][geometry]") {
   array<vec3, 3> triangle = {
       vec3{0.0f, 0.0f, 1.0f},
       vec3{1.0f, 0.0f, 1.0f},
@@ -56,7 +56,7 @@ TEST_CASE("simple ray-triangle intersections", "[util] [geometry]") {
   REQUIRE(rayIntersectsTriangle(vec3{0.25f, 0.25f, 1.0f}, triangle));
 }
 
-TEST_CASE("random ray-triangle intersections", "[util] [geometry]") {
+TEST_CASE("random ray-triangle intersections", "[util][geometry]") {
   array<vec3, 3> triangle = {
       vec3{0.0f, 0.0f, 1.0f},
       vec3{1.0f, 0.0f, 1.0f},

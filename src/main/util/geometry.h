@@ -43,8 +43,11 @@ glm::vec3 sphericalToCartesian(float lat, float lon, float radius) noexcept;
  */
 glm::vec3 cartesianToSpherical(glm::vec3 const &v) noexcept;
 
+constexpr float INTERSECT_EPSILON = 0.001f;
 /**
  * does ray intersect the triangle defined by vertices?
+ *
+ * @note inaccurate if ray is close to parallel with triangle
  */
 bool rayIntersectsTriangle(glm::vec3 const &ray,
                            std::array<glm::vec3, 3> const &vertices) noexcept;

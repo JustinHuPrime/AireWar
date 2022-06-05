@@ -86,6 +86,7 @@ OPTIONS := -std=c++20 -D_POSIX_C_SOURCE=202205L -I$(SRCDIR)\
 -Ilibs/stb -Ilibs/json/single_include $(shell pkg-config --cflags libsodium sdl2 glew opengl freetype2 glm)
 TOPTIONS := -I$(TSRCDIR) -Ilibs/Catch2/src -Ilibs/Catch2/Build/generated-includes
 LIBS := $(shell pkg-config --libs libsodium sdl2 glew opengl freetype2 glm)
+TLIBS := libs/Catch2/Build/src/libCatch2Main.a libs/Catch2/Build/src/libCatch2.a
 
 DEBUGOPTIONS := -Og -ggdb -DASSET_PREFIX=\"assets\"s
 RELEASEOPTIONS := -O3 -Wunused -Wdisabled-optimization -DNDEBUG -DASSET_PREFIX=\"/usr/share/airewar/assets\"
@@ -137,7 +138,7 @@ $(DEPS): $$(patsubst $(DEPDIR)/%.dep,$(SRCDIR)/%.cc,$$@) | $$(dir $$@)
 
 $(TEXENAME): libs/Catch2/Build/src/libCatch2Main.a libs/Catch2/Build/src/libCatch2.a libs/Catch2/Build/generated-includes/catch2/catch_user_config.hpp $(TOBJS) $(OBJS)
 	@$(ECHO) "Linking $@"
-	@$(CXX) -o $(TEXENAME) $(OPTIONS) $(TOPTIONS) $(filter-out %main.o,$(OBJS)) $(TOBJS) libs/Catch2/Build/src/libCatch2Main.a libs/Catch2/Build/src/libCatch2.a $(LIBS)
+	@$(CXX) -o $(TEXENAME) $(OPTIONS) $(TOPTIONS) $(filter-out %main.o,$(OBJS)) $(TOBJS) $(LIBS) $(TLIBS)
 
 $(TOBJS): $$(patsubst $(TOBJDIR)/%.o,$(TSRCDIR)/%.cc,$$@) $$(patsubst $(TOBJDIR)/%.o,$(TDEPDIR)/%.dep,$$@) | $$(dir $$@)
 	@$(ECHO) "Compiling $@"

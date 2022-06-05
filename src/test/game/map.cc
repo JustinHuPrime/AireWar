@@ -19,15 +19,86 @@
 
 #include "game/map.h"
 
+#include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators_all.hpp>
+#include <glm/gtc/constants.hpp>
 #include <limits>
+#include <thread>
+#include <vector>
+
+#include "stb_image_write.h"
+#include "util/geometry.h"
 
 using namespace std;
 using namespace airewar::game;
+using namespace glm;
+using namespace airewar::util;
+using namespace Catch;
 
-TEST_CASE("map generates", "[game] [map]") {
+TEST_CASE("map generates", "[game][map]") {
   Map map;
   map.generate(
       GENERATE(take(10, random(0UL, numeric_limits<uint64_t>().max()))));
+
+  REQUIRE(map.plates.size() == 18);
+
+  REQUIRE(map.countTiles() % 20 == 0);
+  float integral;
+  float fractional = modf(log(map.countTiles() / 20) / log(4), &integral);
+  REQUIRE(fractional == Approx(0.0f));
+}
+
+constexpr int IMAGE_WIDTH = 4000;
+constexpr int IMAGE_HEIGHT = 2000;
+constexpr int IMAGE_CHANNELS = 3;
+
+TEST_CASE("generate png maps", "[game][map]") {
+  Map map;
+  map.generate(
+      GENERATE(take(1, random(0UL, numeric_limits<uint64_t>().max()))));
+
+  unordered_map<Map::Plate const *, tuple<uint8_t, uint8_t, uint8_t>>
+      plateColours = {
+          {&map.plates[0], {255, 0, 0}},  {&map.plates[1], {0, 0, 255}},
+          {&map.plates[2], {171, 85, 0}}, {&map.plates[3], {0, 0, 228}},
+          {&map.plates[4], {85, 171, 0}}, {&map.plates[5], {0, 0, 199}},
+          {&map.plates[6], {0, 255, 0}},  {&map.plates[7], {0, 0, 171}},
+          {&map.plates[8], {128, 0, 0}},  {&map.plates[9], {0, 0, 142}},
+          {&map.plates[10], {96, 32, 0}}, {&map.plates[11], {0, 0, 114}},
+          {&map.plates[12], {64, 64, 0}}, {&map.plates[13], {0, 0, 85}},
+          {&map.plates[14], {32, 96, 0}}, {&map.plates[15], {0, 0, 57}},
+          {&map.plates[16], {0, 128, 0}}, {&map.plates[17], {0, 0, 28}},
+      };
+
+  unique_ptr<uint8_t[]> pixels =
+      make_unique<uint8_t[]>(IMAGE_WIDTH * IMAGE_HEIGHT * IMAGE_CHANNELS);
+
+  vector<thread> threads;
+
+  for (size_t cnt = 0; cnt < 20; ++cnt) {
+    threads.emplace_back(
+        [&pixels, &map, &plateColours](size_t startY) {
+          for (size_t y = startY; y < startY + IMAGE_HEIGHT / 20; ++y) {
+            for (size_t x = 0; x < IMAGE_WIDTH; ++x) {
+              float lat = -2.0f * pi<float>() / IMAGE_HEIGHT * y + pi<float>();
+              float lon = 2.0f * pi<float>() / IMAGE_WIDTH * x;
+              Map::Tile &tile =
+                  map[sphericalToCartesian(lat, lon, Map::RADIUS)];
+              pixels[(y * IMAGE_WIDTH + x) * IMAGE_CHANNELS] =
+                  get<0>(plateColours.find(tile.plate)->second);
+              pixels[(y * IMAGE_WIDTH + x) * IMAGE_CHANNELS + 1] =
+                  get<1>(plateColours.find(tile.plate)->second);
+              pixels[(y * IMAGE_WIDTH + x) * IMAGE_CHANNELS + 2] =
+                  get<2>(plateColours.find(tile.plate)->second);
+            }
+          }
+        },
+        IMAGE_HEIGHT / 20 * cnt);
+  }
+
+  for_each(threads.begin(), threads.end(), [](thread &t) { return t.join(); });
+
+  REQUIRE(stbi_write_png("tectonic_plates.png", IMAGE_WIDTH, IMAGE_HEIGHT,
+                         IMAGE_CHANNELS, pixels.get(), 0) != 0);
 }

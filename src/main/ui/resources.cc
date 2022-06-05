@@ -363,8 +363,11 @@ Glyph &Font::glyph(char32_t c) const noexcept {
   if (found != cache_.end()) {
     return found->second;
   } else {
-    FT_Error result = FT_Load_Glyph(
-        face_.get(), FT_Get_Char_Index(face_.get(), c), FT_LOAD_RENDER);
+#ifndef NDEBUG
+    FT_Error result =
+#endif
+        FT_Load_Glyph(face_.get(), FT_Get_Char_Index(face_.get(), c),
+                      FT_LOAD_RENDER);
     assert((result == FT_Err_Ok) && "Failed to load glyph");
     cache_.emplace(key, Glyph(face_.get()->glyph));
     return cache_.at(key);

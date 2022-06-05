@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <execution>
+#include <list>
 #include <random>
 #include <thread>
 #include <utility>
@@ -37,7 +38,7 @@ using namespace std::execution;
 namespace airewar::game {
 namespace {
 float angleBetween(vec3 const &a, vec3 const &b) {
-  return acos(dot(normalize(a), normalize(b)));
+  return acos(glm::clamp(dot(normalize(a), normalize(b)), -1.0f, 1.0f));
 }
 }  // namespace
 
@@ -80,11 +81,9 @@ void Map::generate(uint64_t seed) noexcept {
   root_->forEach([this](Map::Tile &tile) {
     tile.plate = &*min_element(
         plates.begin(), plates.end(), [&tile](Plate const &a, Plate const &b) {
-          float distance1 =
-              dot(normalize(tile.centroid), normalize(a.center.centroid));
+          float distance1 = angleBetween(tile.centroid, a.center.centroid);
+          float distance2 = angleBetween(tile.centroid, b.center.centroid);
           if (a.major) distance1 /= MAJOR_PLATE_SIZE_MULTIPLIER;
-          float distance2 =
-              dot(normalize(tile.centroid), normalize(b.center.centroid));
           if (b.major) distance2 /= MAJOR_PLATE_SIZE_MULTIPLIER;
 
           return distance1 < distance2;
@@ -240,6 +239,28 @@ void Map::generate(uint64_t seed) noexcept {
 
 uint64_t Map::getSeed() const noexcept { return seed_; }
 
+Map::Tile &Map::operator[](glm::vec3 const &ray) noexcept {
+  return (*root_)[ray];
+}
+
+size_t Map::countTiles() const noexcept {
+  vector<thread> threads;
+  list<size_t> counts;
+
+  for (unique_ptr<TriangularNode> &child : root_->children_) {
+    counts.push_back(0);
+    threads.emplace_back(
+        [](unique_ptr<TriangularNode> &child, size_t &count) {
+          child->forEach([&count](Tile &) { ++count; });
+        },
+        ref(child), ref(counts.back()));
+  }
+
+  for_each(threads.begin(), threads.end(), [](thread &t) { return t.join(); });
+
+  return accumulate(counts.begin(), counts.end(), 0);
+}
+
 Map::IcosaNode::IcosaNode() noexcept : children_() {
   // NOTE: assumes at least one level of triangle nodes before the leaf nodes
 
@@ -312,39 +333,65 @@ Map::IcosaNode::IcosaNode() noexcept : children_() {
 }
 
 Map::Tile &Map::IcosaNode::operator[](vec3 const &ray) noexcept {
-  return (**find_if(par_unseq, children_.begin(), children_.end(),
-                    [&ray](unique_ptr<Node> const &child) {
-                      return child->intersectsRay(ray);
-                    }))[ray];
+  array<unique_ptr<TriangularNode>, 20>::iterator found =
+      find_if(par_unseq, children_.begin(), children_.end(),
+              [&ray](unique_ptr<TriangularNode> const &child) {
+                return child->intersectsRay(ray);
+              });
+  if (found != children_.cend()) {
+    return (**found)[ray];
+  } else {
+    return (**min_element(children_.begin(), children_.end(),
+                          [&ray](unique_ptr<TriangularNode> const &a,
+                                 unique_ptr<TriangularNode> const &b) {
+                            return angleBetween(ray, a->centroid) <
+                                   angleBetween(ray, b->centroid);
+                          }))[ray];
+  }
 }
 
 Map::Tile const &Map::IcosaNode::operator[](vec3 const &ray) const noexcept {
-  return (**find_if(par_unseq, children_.begin(), children_.end(),
-                    [&ray](unique_ptr<Node> const &child) {
-                      return child->intersectsRay(ray);
-                    }))[ray];
+  array<unique_ptr<TriangularNode>, 20>::const_iterator found =
+      find_if(par_unseq, children_.cbegin(), children_.cend(),
+              [&ray](unique_ptr<TriangularNode> const &child) {
+                return child->intersectsRay(ray);
+              });
+  if (found != children_.cend()) {
+    return (**found)[ray];
+  } else {
+    return (**min_element(children_.cbegin(), children_.cend(),
+                          [&ray](unique_ptr<TriangularNode> const &a,
+                                 unique_ptr<TriangularNode> const &b) {
+                            return angleBetween(ray, a->centroid) <
+                                   angleBetween(ray, b->centroid);
+                          }))[ray];
+  }
 }
 
 void Map::IcosaNode::projectOntoSphere() noexcept {
   vector<thread> threads;
 
-  for (unique_ptr<Node> &child : children_) {
+  for (unique_ptr<TriangularNode> &child : children_) {
     threads.emplace_back(
-        [](unique_ptr<Node> &child) { return child->projectOntoSphere(); },
+        [](unique_ptr<TriangularNode> &child) {
+          return child->projectOntoSphere();
+        },
         ref(child));
   }
 
   for_each(threads.begin(), threads.end(), [](thread &t) { return t.join(); });
 }
 
-bool Map::IcosaNode::intersectsRay(vec3 const &ray) noexcept { return true; }
+bool Map::IcosaNode::intersectsRay(vec3 const &ray) const noexcept {
+  return true;
+}
 
 void Map::IcosaNode::forEach(function<void(Map::Tile &)> const &f) noexcept {
   vector<thread> threads;
 
-  for (unique_ptr<Node> &child : children_) {
+  for (unique_ptr<TriangularNode> &child : children_) {
     threads.emplace_back(
-        [&f](unique_ptr<Node> &child) { return child->forEach(f); },
+        [&f](unique_ptr<TriangularNode> &child) { return child->forEach(f); },
         ref(child));
   }
 
@@ -352,7 +399,10 @@ void Map::IcosaNode::forEach(function<void(Map::Tile &)> const &f) noexcept {
 }
 
 Map::TriangularNode::TriangularNode(array<vec3, 3> const &vertices) noexcept
-    : vertices_(vertices) {
+    : vertices_(vertices),
+      centroid(RADIUS * normalize(accumulate(vertices.begin(), vertices.end(),
+                                             vec3{0.0f, 0.0f, 0.0f}) /
+                                  3.0f)) {
   assert(
       0.999f < angleBetween(vertices_[0] - vertices_[2],
                             vertices_[1] - vertices_[2]) /
@@ -374,13 +424,29 @@ Map::TriangularNode::TriangularNode(array<vec3, 3> const &vertices) noexcept
       angleBetween(vertices_[2] - vertices_[1], vertices_[0] - vertices_[1]) /
               (pi<float>() / 3.0f) <
           1.001f);
+
+  assert(0.999f < distance(vertices[0], vertices[2]) /
+                      distance(vertices[1], vertices[2]) &&
+         distance(vertices[0], vertices[2]) /
+                 distance(vertices[1], vertices[2]) <
+             1.001f);
+  assert(0.999f < distance(vertices[1], vertices[0]) /
+                      distance(vertices[2], vertices[0]) &&
+         distance(vertices[1], vertices[0]) /
+                 distance(vertices[2], vertices[0]) <
+             1.001f);
+  assert(0.999f < distance(vertices[2], vertices[1]) /
+                      distance(vertices[0], vertices[1]) &&
+         distance(vertices[2], vertices[1]) /
+                 distance(vertices[0], vertices[1]) <
+             1.001f);
 }
 
 void Map::TriangularNode::projectOntoSphere() noexcept {
   for (auto &vertex : vertices_) vertex = RADIUS * normalize(vertex);
 }
 
-bool Map::TriangularNode::intersectsRay(vec3 const &ray) noexcept {
+bool Map::TriangularNode::intersectsRay(vec3 const &ray) const noexcept {
   return rayIntersectsTriangle(ray, vertices_);
 }
 
@@ -410,17 +476,40 @@ Map::TriangleNode::TriangleNode(array<vec3, 3> const &vertices) noexcept
 }
 
 Map::Tile &Map::TriangleNode::operator[](vec3 const &ray) noexcept {
-  return (**find_if(children_.begin(), children_.end(),
-                    [&ray](unique_ptr<Node> const &child) {
-                      return child->intersectsRay(ray);
-                    }))[ray];
+  array<unique_ptr<TriangularNode>, 4>::iterator found =
+      find_if(par_unseq, children_.begin(), children_.end(),
+              [&ray](unique_ptr<TriangularNode> const &child) {
+                return child->intersectsRay(ray);
+              });
+  if (found != children_.end()) {
+    return (**found)[ray];
+  } else {
+    return (**min_element(children_.begin(), children_.end(),
+                          [&ray](unique_ptr<TriangularNode> const &a,
+                                 unique_ptr<TriangularNode> const &b) {
+                            return angleBetween(ray, a->centroid) <
+                                   angleBetween(ray, b->centroid);
+                          }))[ray];
+  }
 }
 
 Map::Tile const &Map::TriangleNode::operator[](vec3 const &ray) const noexcept {
-  return (**find_if(children_.begin(), children_.end(),
-                    [&ray](unique_ptr<Node> const &child) {
-                      return child->intersectsRay(ray);
-                    }))[ray];
+  assert(intersectsRay(ray));
+  array<unique_ptr<TriangularNode>, 4>::const_iterator found =
+      find_if(par_unseq, children_.cbegin(), children_.cend(),
+              [&ray](unique_ptr<TriangularNode> const &child) {
+                return child->intersectsRay(ray);
+              });
+  if (found != children_.cend()) {
+    return (**found)[ray];
+  } else {
+    return (**min_element(children_.cbegin(), children_.cend(),
+                          [&ray](unique_ptr<TriangularNode> const &a,
+                                 unique_ptr<TriangularNode> const &b) {
+                            return angleBetween(ray, a->centroid) <
+                                   angleBetween(ray, b->centroid);
+                          }))[ray];
+  }
 }
 
 void Map::TriangleNode::projectOntoSphere() noexcept {
@@ -433,14 +522,36 @@ void Map::TriangleNode::forEach(function<void(Map::Tile &)> const &f) noexcept {
 }
 
 Map::LeafNode::LeafNode(array<vec3, 3> const &vertices) noexcept
-    : TriangularNode(vertices),
-      tile_(RADIUS *
-            normalize((vertices[0] + vertices[1] + vertices[2]) / 3.0f)) {}
+    : TriangularNode(vertices), tile_(centroid) {
+  assert(distance(vertices[0], vertices[1]) <= Map::MAX_TILE_SIZE);
+  assert(distance(vertices[1], vertices[2]) <= Map::MAX_TILE_SIZE);
+  assert(distance(vertices[2], vertices[0]) <= Map::MAX_TILE_SIZE);
+  assert(angleBetween(vertices[0], vertices[1]) * 6'371'000.0f <=
+         Map::MAX_TILE_SIZE);
+  assert(angleBetween(vertices[1], vertices[2]) * 6'371'000.0f <=
+         Map::MAX_TILE_SIZE);
+  assert(angleBetween(vertices[2], vertices[0]) * 6'371'000.0f <=
+         Map::MAX_TILE_SIZE);
+}
 
 Map::Tile &Map::LeafNode::operator[](vec3 const &) noexcept { return tile_; }
 
 Map::Tile const &Map::LeafNode::operator[](vec3 const &) const noexcept {
   return tile_;
+}
+
+void Map::LeafNode::projectOntoSphere() noexcept {
+  TriangularNode::projectOntoSphere();
+
+  assert(distance(vertices_[0], vertices_[1]) <= Map::MAX_TILE_SIZE);
+  assert(distance(vertices_[1], vertices_[2]) <= Map::MAX_TILE_SIZE);
+  assert(distance(vertices_[2], vertices_[0]) <= Map::MAX_TILE_SIZE);
+  assert(angleBetween(vertices_[0], vertices_[1]) * 6'371'000.0f <=
+         Map::MAX_TILE_SIZE);
+  assert(angleBetween(vertices_[1], vertices_[2]) * 6'371'000.0f <=
+         Map::MAX_TILE_SIZE);
+  assert(angleBetween(vertices_[2], vertices_[0]) * 6'371'000.0f <=
+         Map::MAX_TILE_SIZE);
 }
 
 void Map::LeafNode::forEach(function<void(Map::Tile &)> const &f) noexcept {

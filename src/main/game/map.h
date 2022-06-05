@@ -31,10 +31,8 @@
 
 namespace airewar::game {
 class Map final {
- private:
-  struct Plate;
-
  public:
+  struct Plate;
   struct Tile final {
     glm::vec3 centroid;
     Plate const *plate;
@@ -49,6 +47,22 @@ class Map final {
     Tile &operator=(Tile &&) noexcept = default;
   };
 
+  struct Plate {
+    bool major;
+    bool continental;
+    Tile &center;
+
+    Plate(bool major, bool continental, Tile &center) noexcept;
+    Plate(Plate const &) noexcept = default;
+    Plate(Plate &&) noexcept = default;
+
+    ~Plate() noexcept = default;
+
+    Plate &operator=(Plate const &) noexcept = default;
+    Plate &operator=(Plate &&) noexcept = default;
+  };
+  std::vector<Plate> plates;
+
   /** radius of the world in meters (= 6,371 km) */
   static constexpr float RADIUS = 6'371'000.0f;
 
@@ -60,7 +74,7 @@ class Map final {
   static constexpr size_t NUM_MAJOR_PLATES = 8;
 
   /** number of minor plates to generate */
-  static constexpr size_t NUM_MINOR_PLATES = 16;
+  static constexpr size_t NUM_MINOR_PLATES = 10;
 
   /** how much larger should major plates be */
   static constexpr float MAJOR_PLATE_SIZE_MULTIPLIER = 2.0f;
@@ -80,9 +94,12 @@ class Map final {
   void generate(uint64_t) noexcept;
   uint64_t getSeed() const noexcept;
 
+  Tile &operator[](glm::vec3 const &ray) noexcept;
+
+  size_t countTiles() const noexcept;
+
  private:
-  class Node {
-   public:
+  struct Node {
     Node() noexcept = default;
     Node(Node const &) noexcept = default;
     Node(Node &&) noexcept = default;
@@ -97,13 +114,13 @@ class Map final {
 
     virtual void projectOntoSphere() noexcept = 0;
 
-    virtual bool intersectsRay(glm::vec3 const &ray) noexcept = 0;
+    virtual bool intersectsRay(glm::vec3 const &ray) const noexcept = 0;
 
     virtual void forEach(std::function<void(Tile &)> const &) noexcept = 0;
   };
 
-  class IcosaNode final : public Node {
-   public:
+  struct TriangularNode;
+  struct IcosaNode final : public Node {
     IcosaNode() noexcept;
     IcosaNode(IcosaNode const &) noexcept = default;
     IcosaNode(IcosaNode &&) noexcept = default;
@@ -118,15 +135,13 @@ class Map final {
 
     void projectOntoSphere() noexcept override;
 
-    bool intersectsRay(glm::vec3 const &ray) noexcept override;
+    bool intersectsRay(glm::vec3 const &ray) const noexcept override;
 
     void forEach(std::function<void(Tile &)> const &) noexcept override;
 
-   private:
-    std::array<std::unique_ptr<Node>, 20> children_;
+    std::array<std::unique_ptr<TriangularNode>, 20> children_;
   };
-  class TriangularNode : public Node {
-   public:
+  struct TriangularNode : public Node {
     explicit TriangularNode(std::array<glm::vec3, 3> const &vertices) noexcept;
     TriangularNode(TriangularNode const &) noexcept = default;
     TriangularNode(TriangularNode &&) noexcept = default;
@@ -138,12 +153,12 @@ class Map final {
 
     void projectOntoSphere() noexcept override;
 
-    bool intersectsRay(glm::vec3 const &ray) noexcept override;
+    bool intersectsRay(glm::vec3 const &ray) const noexcept override;
 
-   private:
     std::array<glm::vec3, 3> vertices_;
+    glm::vec3 centroid;
   };
-  class TriangleNode final : public TriangularNode {
+  struct TriangleNode final : public TriangularNode {
    public:
     explicit TriangleNode(std::array<glm::vec3, 3> const &vertices) noexcept;
     TriangleNode(TriangleNode const &) noexcept = default;
@@ -161,11 +176,9 @@ class Map final {
 
     void forEach(std::function<void(Tile &)> const &) noexcept override;
 
-   private:
-    std::array<std::unique_ptr<Node>, 4> children_;
+    std::array<std::unique_ptr<TriangularNode>, 4> children_;
   };
-  class LeafNode final : public TriangularNode {
-   public:
+  struct LeafNode final : public TriangularNode {
     explicit LeafNode(std::array<glm::vec3, 3> const &vertices) noexcept;
     LeafNode(LeafNode const &) noexcept = default;
     LeafNode(LeafNode &&) noexcept = default;
@@ -178,29 +191,14 @@ class Map final {
     Tile &operator[](glm::vec3 const &ray) noexcept override;
     Tile const &operator[](glm::vec3 const &ray) const noexcept override;
 
+    void projectOntoSphere() noexcept override;
+
     void forEach(std::function<void(Tile &)> const &) noexcept override;
 
-   private:
     Tile tile_;
   };
 
-  struct Plate {
-    bool major;
-    bool continental;
-    Tile &center;
-
-    Plate(bool major, bool continental, Tile &center) noexcept;
-    Plate(Plate const &) noexcept = default;
-    Plate(Plate &&) noexcept = default;
-
-    ~Plate() noexcept = default;
-
-    Plate &operator=(Plate const &) noexcept = default;
-    Plate &operator=(Plate &&) noexcept = default;
-  };
-  std::vector<Plate> plates;
-
-  std::unique_ptr<Node> root_;
+  std::unique_ptr<IcosaNode> root_;
   uint64_t seed_;
 };
 }  // namespace airewar::game

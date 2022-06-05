@@ -25,13 +25,6 @@ using namespace glm;
 using namespace std;
 
 namespace airewar::util {
-namespace {
-float signedVolume(vec3 const &a, vec3 const &b, vec3 const &c,
-                   vec3 const &d) noexcept {
-  return dot(cross(b - a, c - a), d - a);
-}
-}  // namespace
-
 vec3 sphericalToCartesian(float lat, float lon, float radius) noexcept {
   return radius * vec3{sin(lon) * cos(lat), sin(lat), cos(lon) * cos(lat)};
 }
@@ -46,29 +39,16 @@ vec3 cartesianToSpherical(vec3 const &v) noexcept {
 
 bool rayIntersectsTriangle(vec3 const &ray,
                            array<vec3, 3> const &vertices) noexcept {
-  // vec3 normalized = normalize(ray);
-  // vec3 normal = cross(vertices_[1] - vertices_[0], vertices_[2] -
-  // vertices_[0]); float a = dot(vertices_[0], normal); float b =
-  // dot(normalized, normal); float k = a / b; vec3 intersect = normalized *
-  // k; float barySum = (area(vertices_[0], vertices_[1], intersect) +
-  //                  area(vertices_[1], vertices_[2], intersect) +
-  //                  area(vertices_[2], vertices_[0], intersect)) /
-  //                 area(vertices_[0], vertices_[1], vertices_[2]);
-  // return 1.0f - INTERSECT_DELTA < barySum && barySum < 1.0f +
-  // INTERSECT_DELTA;
-
-  vec3 q1 = vec3{0.0f, 0.0f, 0.0f};
-  vec3 q2 = normalize(ray) *
-            length(*max_element(vertices.begin(), vertices.end(),
-                                [](vec3 const &a, vec3 const &b) {
-                                  return length(a) < length(b);
-                                })) *
-            10.0f;
-  return signbit(signedVolume(q1, vertices[0], vertices[1], vertices[2])) !=
-             signbit(signedVolume(q2, vertices[0], vertices[1], vertices[2])) &&
-         signbit(signedVolume(q1, q2, vertices[0], vertices[1])) ==
-             signbit(signedVolume(q1, q2, vertices[1], vertices[2])) &&
-         signbit(signedVolume(q1, q2, vertices[1], vertices[2])) ==
-             signbit(signedVolume(q1, q2, vertices[2], vertices[0]));
+  vec3 direction = normalize(ray);
+  vec3 edge1 = vertices[1] - vertices[0];
+  vec3 edge2 = vertices[2] - vertices[0];
+  vec3 normal = cross(edge1, edge2);
+  float determinant = -dot(direction, normal);
+  vec3 dao = cross(-vertices[0], direction);
+  float u = dot(edge2, dao) / determinant;
+  float v = -dot(edge1, dao) / determinant;
+  float t = dot(-vertices[0], normal) / determinant;
+  return abs(determinant) > INTERSECT_EPSILON && t >= 0.0 && u >= 0.0 &&
+         v >= 0.0 && (u + v) <= 1.0;
 }
 }  // namespace airewar::util

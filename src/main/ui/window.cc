@@ -37,6 +37,7 @@ void setAttribute(SDL_GLattr attr, int value) {
     throw InitException("Could not set OpenGL attribute", SDL_GetError());
 }
 
+#ifndef NDEBUG
 void debugMessageCallback(GLenum source, GLenum type, GLuint id,
                           GLenum severity, GLsizei, GLchar const *message,
                           void const *) {
@@ -128,6 +129,7 @@ void debugMessageCallback(GLenum source, GLenum type, GLuint id,
 
   // if (type == GL_DEBUG_TYPE_ERROR) abort();
 }
+#endif
 }  // namespace
 
 Window::Window()
