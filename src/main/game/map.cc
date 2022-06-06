@@ -60,7 +60,7 @@ void Map::generate(uint64_t seed) noexcept {
 
   for (size_t cnt = 0; cnt < NUM_MAJOR_PLATES; ++cnt) {
     float lon = two_pi<float>() * zeroToOne(rng);
-    float lat = acos(2 * zeroToOne(rng) - 1);
+    float lat = acos(2 * zeroToOne(rng) - 1) - half_pi<float>();
 
     plates.emplace_back(true, cnt % 2 == 0,
                         (*root_)[sphericalToCartesian(lat, lon, RADIUS)]);
@@ -70,7 +70,7 @@ void Map::generate(uint64_t seed) noexcept {
 
   for (size_t cnt = 0; cnt < NUM_MINOR_PLATES; ++cnt) {
     float lon = two_pi<float>() * zeroToOne(rng);
-    float lat = acos(2 * zeroToOne(rng) - 1);
+    float lat = acos(2 * zeroToOne(rng) - 1) - half_pi<float>();
 
     plates.emplace_back(false, cnt % 3 == 0,
                         (*root_)[sphericalToCartesian(lat, lon, RADIUS)]);

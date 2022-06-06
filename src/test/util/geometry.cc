@@ -45,6 +45,22 @@ TEST_CASE("spherical to cartesian and back is the identity",
   REQUIRE(spherical.z == Approx(spherical_back.z));
 }
 
+TEST_CASE("cartesian to spherical and back is the identity",
+          "[util] [geometry]") {
+  float x = GENERATE(take(100, random(-10.0f, 10.0f)));
+  float y = GENERATE(take(100, random(-10.0f, 10.0f)));
+  float z = GENERATE(take(100, random(-10.0f, 10.0f)));
+
+  vec3 cartesian = vec3{x, y, z};
+  vec3 spherical = cartesianToSpherical(cartesian);
+  vec3 cartesian_back =
+      sphericalToCartesian(spherical.x, spherical.y, spherical.z);
+
+  REQUIRE(cartesian.x == Approx(cartesian_back.x).margin(0.01f));
+  REQUIRE(cartesian.y == Approx(cartesian_back.y).margin(0.01f));
+  REQUIRE(cartesian.z == Approx(cartesian_back.z).margin(0.01f));
+}
+
 TEST_CASE("simple ray-triangle intersections", "[util][geometry]") {
   array<vec3, 3> triangle = {
       vec3{0.0f, 0.0f, 1.0f},

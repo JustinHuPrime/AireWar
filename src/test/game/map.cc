@@ -36,7 +36,7 @@ using namespace glm;
 using namespace airewar::util;
 using namespace Catch;
 
-TEST_CASE("map generates", "[game][map]") {
+TEST_CASE("map generates", "[game][map][.long]") {
   Map map;
   map.generate(
       GENERATE(take(10, random(0UL, numeric_limits<uint64_t>().max()))));
@@ -53,7 +53,7 @@ constexpr int IMAGE_WIDTH = 4000;
 constexpr int IMAGE_HEIGHT = 2000;
 constexpr int IMAGE_CHANNELS = 3;
 
-TEST_CASE("generate png maps", "[game][map]") {
+TEST_CASE("generate png maps", "[game][map][.long]") {
   Map map;
   map.generate(
       GENERATE(take(1, random(0UL, numeric_limits<uint64_t>().max()))));
@@ -81,8 +81,8 @@ TEST_CASE("generate png maps", "[game][map]") {
         [&pixels, &map, &plateColours](size_t startY) {
           for (size_t y = startY; y < startY + IMAGE_HEIGHT / 20; ++y) {
             for (size_t x = 0; x < IMAGE_WIDTH; ++x) {
-              float lat = -2.0f * pi<float>() / IMAGE_HEIGHT * y + pi<float>();
-              float lon = 2.0f * pi<float>() / IMAGE_WIDTH * x;
+              float lat = -pi<float>() / IMAGE_HEIGHT * y + half_pi<float>();
+              float lon = two_pi<float>() / IMAGE_WIDTH * x;
               Map::Tile &tile =
                   map[sphericalToCartesian(lat, lon, Map::RADIUS)];
               pixels[(y * IMAGE_WIDTH + x) * IMAGE_CHANNELS] =
@@ -98,6 +98,30 @@ TEST_CASE("generate png maps", "[game][map]") {
   }
 
   for_each(threads.begin(), threads.end(), [](thread &t) { return t.join(); });
+
+  for_each(
+      map.plates.begin(), map.plates.end(), [&pixels](Map::Plate const &plate) {
+        vec3 center = cartesianToSpherical(plate.center.centroid);
+        float lat = center.x;
+        float lon = center.y;
+
+        int y =
+            roundeven((lat - half_pi<float>()) * IMAGE_HEIGHT / -pi<float>());
+        int x = roundeven(lon * IMAGE_WIDTH / two_pi<float>());
+
+        for (int offsetY = -10; offsetY <= 10; ++offsetY) {
+          for (int offsetX = -10; offsetX <= 10; ++offsetX) {
+            pixels[((y + offsetY) * IMAGE_WIDTH + x + offsetX) *
+                   IMAGE_CHANNELS] = 255;
+            pixels[((y + offsetY) * IMAGE_WIDTH + x + offsetX) *
+                       IMAGE_CHANNELS +
+                   1] = 0;
+            pixels[((y + offsetY) * IMAGE_WIDTH + x + offsetX) *
+                       IMAGE_CHANNELS +
+                   2] = 255;
+          }
+        }
+      });
 
   REQUIRE(stbi_write_png("tectonic_plates.png", IMAGE_WIDTH, IMAGE_HEIGHT,
                          IMAGE_CHANNELS, pixels.get(), 0) != 0);
