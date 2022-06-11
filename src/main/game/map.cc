@@ -27,7 +27,6 @@
 #include <utility>
 #include <vector>
 
-#include "glm/gtc/constants.hpp"
 #include "util/geometry.h"
 
 using namespace std;
@@ -44,6 +43,9 @@ float angleBetween(vec3 const &a, vec3 const &b) {
 
 Map::Tile::Tile(vec3 const &centroid_) noexcept : centroid(centroid_) {}
 
+Map::Plate::Plate(bool major_, bool continental_, Tile &center_) noexcept
+    : major(major_), continental(continental_), center(center_) {}
+
 void Map::generate(uint64_t seed) noexcept {
   seed_ = seed;
   root_ = make_unique<IcosaNode>();
@@ -55,29 +57,49 @@ void Map::generate(uint64_t seed) noexcept {
   // step 1.1: generate plate boundaries
 
   uniform_real_distribution<float> zeroToOne(0.0f, 1.0f);
+  uniform_int_distribution<size_t> majorPlateSelector(0, NUM_MAJOR_PLATES - 1);
 
   // step 1.1.1: generate major plates
-
-  for (size_t cnt = 0; cnt < NUM_MAJOR_PLATES; ++cnt) {
+  while (plates.size() < NUM_MAJOR_PLATES) {
+    // step 1.1.1.1: generate random point
     float lon = two_pi<float>() * zeroToOne(rng);
     float lat = acos(2 * zeroToOne(rng) - 1) - half_pi<float>();
+    vec3 attempt = sphericalToCartesian(lat, lon, RADIUS);
 
-    plates.emplace_back(true, cnt % 2 == 0,
-                        (*root_)[sphericalToCartesian(lat, lon, RADIUS)]);
+    // step 1.1.1.2: require that point be far enough away from existing points
+    if (any_of(plates.begin(), plates.end(), [&attempt](Plate const &plate) {
+          return angleBetween(attempt, plate.center.centroid) <
+                 MIN_MAJOR_PLATE_ANGLE;
+        }))
+      continue;
+
+    // step 1.1.1.3: place seed
+    plates.emplace_back(true, plates.size() % 2 == 0, (*root_)[attempt]);
   }
 
   // step 1.1.2: generate minor plates
-
-  for (size_t cnt = 0; cnt < NUM_MINOR_PLATES; ++cnt) {
+  while (plates.size() < NUM_MAJOR_PLATES + NUM_MINOR_PLATES) {
+    // step 1.1.2.1: generate random point
     float lon = two_pi<float>() * zeroToOne(rng);
     float lat = acos(2 * zeroToOne(rng) - 1) - half_pi<float>();
+    vec3 attempt = sphericalToCartesian(lat, lon, RADIUS);
 
-    plates.emplace_back(false, cnt % 3 == 0,
-                        (*root_)[sphericalToCartesian(lat, lon, RADIUS)]);
+    // step 1.1.1.2: require that point be far enough away from existing points
+    if (any_of(plates.begin(), plates.end(), [&attempt](Plate const &plate) {
+          if (plate.major)
+            return angleBetween(attempt, plate.center.centroid) <
+                   MIN_MAJOR_PLATE_ANGLE;
+          else
+            return angleBetween(attempt, plate.center.centroid) <
+                   MIN_MINOR_PLATE_ANGLE;
+        }))
+      continue;
+
+    // step 1.1.2.3: place seed
+    plates.emplace_back(false, plates.size() % 3 == 0, (*root_)[attempt]);
   }
 
   // step 1.1.3: attach tiles to plates
-
   root_->forEach([this](Map::Tile &tile) {
     tile.plate = &*min_element(
         plates.begin(), plates.end(), [&tile](Plate const &a, Plate const &b) {
@@ -557,7 +579,4 @@ void Map::LeafNode::projectOntoSphere() noexcept {
 void Map::LeafNode::forEach(function<void(Map::Tile &)> const &f) noexcept {
   return f(tile_);
 }
-
-Map::Plate::Plate(bool major_, bool continental_, Tile &center_) noexcept
-    : major(major_), continental(continental_), center(center_) {}
 }  // namespace airewar::game

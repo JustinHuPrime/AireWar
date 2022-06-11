@@ -40,9 +40,9 @@ TEST_CASE("spherical to cartesian and back is the identity",
   vec3 cartesian = sphericalToCartesian(lat, lon, radius);
   vec3 spherical_back = cartesianToSpherical(cartesian);
 
-  REQUIRE(spherical.x == Approx(spherical_back.x));
-  REQUIRE(spherical.y == Approx(spherical_back.y));
-  REQUIRE(spherical.z == Approx(spherical_back.z));
+  REQUIRE(spherical.x == Approx(spherical_back.x).margin(0.01f));
+  REQUIRE(spherical.y == Approx(spherical_back.y).margin(0.01f));
+  REQUIRE(spherical.z == Approx(spherical_back.z).margin(0.01f));
 }
 
 TEST_CASE("cartesian to spherical and back is the identity",

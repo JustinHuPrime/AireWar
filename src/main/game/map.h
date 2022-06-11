@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "glm/glm.hpp"
+#include "glm/gtc/constants.hpp"
 
 namespace airewar::game {
 class Map final {
@@ -73,14 +74,17 @@ class Map final {
   /** number of major plates to generate */
   static constexpr size_t NUM_MAJOR_PLATES = 8;
 
+  /** minimum angular separation between major plate centers */
+  static constexpr float MIN_MAJOR_PLATE_ANGLE = glm::pi<float>() / 8;
+
   /** number of minor plates to generate */
   static constexpr size_t NUM_MINOR_PLATES = 10;
 
+  /** minimum angular separation between minor plate centers */
+  static constexpr float MIN_MINOR_PLATE_ANGLE = glm::pi<float>() / 16;
+
   /** how much larger should major plates be */
   static constexpr float MAJOR_PLATE_SIZE_MULTIPLIER = 2.0f;
-
-  // /** intersection checking tolerance */
-  // static constexpr float INTERSECT_DELTA = 0.001f;
 
   Map() noexcept = default;
   Map(Map const &) noexcept = default;
