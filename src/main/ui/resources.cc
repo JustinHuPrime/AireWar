@@ -37,20 +37,20 @@ using namespace airewar::util::exceptions;
 using namespace airewar::util;
 
 namespace airewar::ui {
-GLResource::GLResource() noexcept : id_(0) {}
+GLResource::GLResource() noexcept : id(0) {}
 
-GLResource::GLResource(unsigned id) noexcept : id_(id) {}
+GLResource::GLResource(unsigned id) noexcept : id(id) {}
 
-GLResource::GLResource(GLResource &&other) noexcept : id_(other.id_) {
-  other.id_ = 0;
+GLResource::GLResource(GLResource &&other) noexcept : id(other.id) {
+  other.id = 0;
 }
 
 GLResource &GLResource::operator=(GLResource &&other) noexcept {
-  swap(id_, other.id_);
+  swap(id, other.id);
   return *this;
 }
 
-unsigned GLResource::id() noexcept { return id_; }
+unsigned GLResource::get() noexcept { return id; }
 
 Shader::Shader(GLenum type, path const &filename)
     : GLResource(glCreateShader(type)) {
@@ -69,22 +69,22 @@ Shader::Shader(GLenum type, path const &filename)
     ss << fin.rdbuf();
     string code = ss.str();
     char const *codePtr = code.c_str();
-    glShaderSource(id_, 1, &codePtr, nullptr);
+    glShaderSource(id, 1, &codePtr, nullptr);
   } catch (ios_base::failure const &e) {
     throw InitException("Failed to load shader " + filename.string(),
                         "Could not read file " + filename.string());
   }
 
-  glCompileShader(id_);
+  glCompileShader(id);
 
 #ifndef NDEBUG
   int status;
-  glGetShaderiv(id_, GL_COMPILE_STATUS, &status);
+  glGetShaderiv(id, GL_COMPILE_STATUS, &status);
   if (status != GL_TRUE) {
     int length;
-    glGetShaderiv(id_, GL_INFO_LOG_LENGTH, &length);
+    glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
     std::unique_ptr<char[]> log = make_unique<char[]>(length + 1);
-    glGetShaderInfoLog(id_, length, nullptr, log.get());
+    glGetShaderInfoLog(id, length, nullptr, log.get());
     log[length] = '\0';
     cerr << "ERROR: Failed to compile " << filename << endl;
     cerr << log.get() << endl;
@@ -93,7 +93,7 @@ Shader::Shader(GLenum type, path const &filename)
 }
 
 Shader::~Shader() noexcept {
-  if (id_ != 0) glDeleteShader(id_);
+  if (id != 0) glDeleteShader(id);
 }
 
 VertexShader::VertexShader(path const &filename)
@@ -103,41 +103,41 @@ FragmentShader::FragmentShader(path const &filename)
     : Shader(GL_FRAGMENT_SHADER, filename) {}
 
 ShaderProgram::ShaderProgram(VertexShader &vs, FragmentShader &fs) noexcept
-    : GLResource(glCreateProgram()), uniforms_() {
-  glAttachShader(id_, vs.id());
-  glAttachShader(id_, fs.id());
-  glLinkProgram(id_);
+    : GLResource(glCreateProgram()), uniforms() {
+  glAttachShader(id, vs.get());
+  glAttachShader(id, fs.get());
+  glLinkProgram(id);
 
 #ifndef NDEBUG
   int status;
-  glGetProgramiv(id_, GL_LINK_STATUS, &status);
+  glGetProgramiv(id, GL_LINK_STATUS, &status);
   if (status != GL_TRUE) {
     int length;
-    glGetProgramiv(id_, GL_INFO_LOG_LENGTH, &length);
+    glGetProgramiv(id, GL_INFO_LOG_LENGTH, &length);
     std::unique_ptr<char[]> log = make_unique<char[]>(length + 1);
-    glGetProgramInfoLog(id_, length, nullptr, log.get());
+    glGetProgramInfoLog(id, length, nullptr, log.get());
     log[length] = '\0';
     cerr << "ERROR: Failed to link shaders" << endl;
     cerr << log.get() << endl;
   }
 #endif
 
-  glDetachShader(id_, vs.id());
-  glDetachShader(id_, fs.id());
+  glDetachShader(id, vs.get());
+  glDetachShader(id, fs.get());
 }
 
 ShaderProgram::~ShaderProgram() noexcept {
-  if (id_ != 0) glDeleteProgram(id_);
+  if (id != 0) glDeleteProgram(id);
 }
 
-void ShaderProgram::use() noexcept { glUseProgram(id_); }
+void ShaderProgram::use() noexcept { glUseProgram(id); }
 
 ShaderProgram &ShaderProgram::setUniform(std::string const &name,
                                          int value) noexcept {
   assert([this]() {
     unsigned currId;
     glGetIntegerv(GL_CURRENT_PROGRAM, reinterpret_cast<int *>(&currId));
-    return currId == id_;
+    return currId == id;
   }() && "active shader isn't the shader whose uniforms are being set");
 
   glUniform1i(getUniformLocation(name), value);
@@ -150,7 +150,7 @@ ShaderProgram &ShaderProgram::setUniform(std::string const &name,
   assert([this]() {
     unsigned currId;
     glGetIntegerv(GL_CURRENT_PROGRAM, reinterpret_cast<int *>(&currId));
-    return currId == id_;
+    return currId == id;
   }() && "active shader isn't the shader whose uniforms are being set");
 
   glUniform4fv(getUniformLocation(name), 1, value_ptr(value));
@@ -163,7 +163,7 @@ ShaderProgram &ShaderProgram::setUniform(std::string const &name,
   assert([this]() {
     unsigned currId;
     glGetIntegerv(GL_CURRENT_PROGRAM, reinterpret_cast<int *>(&currId));
-    return currId == id_;
+    return currId == id;
   }() && "active shader isn't the shader whose uniforms are being set");
 
   glUniformMatrix4fv(getUniformLocation(name), 1, false, value_ptr(value));
@@ -172,31 +172,31 @@ ShaderProgram &ShaderProgram::setUniform(std::string const &name,
 }
 
 int ShaderProgram::getUniformLocation(std::string const &name) noexcept {
-  unordered_map<string, int>::iterator found = uniforms_.find(name);
-  if (found != uniforms_.end()) {
+  unordered_map<string, int>::iterator found = uniforms.find(name);
+  if (found != uniforms.end()) {
     return found->second;
   } else {
-    assert((glGetUniformLocation(id_, name.c_str()) != -1) &&
+    assert((glGetUniformLocation(id, name.c_str()) != -1) &&
            "name doesn't exist as a uniform in the shader program");
-    return uniforms_[name] = glGetUniformLocation(id_, name.c_str());
+    return uniforms[name] = glGetUniformLocation(id, name.c_str());
   }
 }
 
 Texture2D::Texture2D(path const &filename) {
-  glCreateTextures(GL_TEXTURE_2D, 1, &id_);
-  glBindTexture(GL_TEXTURE_2D, id_);
+  glCreateTextures(GL_TEXTURE_2D, 1, &id);
+  glBindTexture(GL_TEXTURE_2D, id);
 
   path p(ASSET_PREFIX);
   p /= "textures";
   p /= filename;
 
   unique_ptr<uint8_t, void (*)(void *)> data(
-      stbi_load(p.c_str(), &width_, &height_, nullptr, 4), stbi_image_free);
+      stbi_load(p.c_str(), &width, &height, nullptr, 4), stbi_image_free);
   if (!data)
     throw InitException("Failed to load texture " + filename.string(),
                         "Could not read file " + filename.string());
 
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width_, height_, 0, GL_RGBA,
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA,
                GL_UNSIGNED_BYTE, data.get());
 
   glGenerateMipmap(GL_TEXTURE_2D);
@@ -208,11 +208,11 @@ Texture2D::Texture2D(path const &filename) {
 }
 
 Texture2D::Texture2D(int width, int height, void const *pixels) noexcept
-    : width_(width), height_(height) {
-  glCreateTextures(GL_TEXTURE_2D, 1, &id_);
-  glBindTexture(GL_TEXTURE_2D, id_);
+    : width(width), height(height) {
+  glCreateTextures(GL_TEXTURE_2D, 1, &id);
+  glBindTexture(GL_TEXTURE_2D, id);
 
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width_, height_, 0, GL_RED,
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RED,
                GL_UNSIGNED_BYTE, pixels);
 
   glGenerateMipmap(GL_TEXTURE_2D);
@@ -224,17 +224,17 @@ Texture2D::Texture2D(int width, int height, void const *pixels) noexcept
 }
 
 Texture2D::~Texture2D() noexcept {
-  if (id_ != 0) glDeleteTextures(1, &id_);
+  if (id != 0) glDeleteTextures(1, &id);
 }
 
 void Texture2D::use(GLenum textureNumber) noexcept {
   glActiveTexture(textureNumber);
-  glBindTexture(GL_TEXTURE_2D, id_);
+  glBindTexture(GL_TEXTURE_2D, id);
 }
 
-int Texture2D::width() const noexcept { return width_; }
+int Texture2D::getWidth() const noexcept { return width; }
 
-int Texture2D::height() const noexcept { return height_; }
+int Texture2D::getHeight() const noexcept { return height; }
 
 VBO::VBO(vector<float> const &data, GLenum usage) noexcept
     : GLResource([]() {
@@ -248,10 +248,10 @@ VBO::VBO(vector<float> const &data, GLenum usage) noexcept
 }
 
 VBO::~VBO() noexcept {
-  if (id_ != 0) glDeleteBuffers(1, &id_);
+  if (id != 0) glDeleteBuffers(1, &id);
 }
 
-void VBO::use() noexcept { glBindBuffer(GL_ARRAY_BUFFER, id_); }
+void VBO::use() noexcept { glBindBuffer(GL_ARRAY_BUFFER, id); }
 
 void VBO::update(std::vector<float> const &data, size_t offset) noexcept {
   use();
@@ -271,10 +271,10 @@ EBO::EBO(vector<unsigned> const &data, GLenum usage) noexcept
 }
 
 EBO::~EBO() noexcept {
-  if (id_ != 0) glDeleteBuffers(1, &id_);
+  if (id != 0) glDeleteBuffers(1, &id);
 }
 
-void EBO::use() noexcept { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, id_); }
+void EBO::use() noexcept { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, id); }
 
 VAO::VAO(VBO &vbo, EBO &ebo, vector<VAO::Attribute> const &attributes) noexcept
     : GLResource([]() {
@@ -296,7 +296,7 @@ VAO::VAO(VBO &vbo, EBO &ebo, vector<VAO::Attribute> const &attributes) noexcept
 }
 
 VAO::~VAO() noexcept {
-  if (id_ != 0) glDeleteVertexArrays(1, &id_);
+  if (id != 0) glDeleteVertexArrays(1, &id);
 }
 
 VAO::Attribute VAO::Attribute::floats(int size, int stride,
@@ -317,13 +317,13 @@ VAO::Attribute::Attribute(int size, GLenum type, bool normalized, int stride,
       offset(offset) {}
 
 ScopeGuard VAO::use() noexcept {
-  glBindVertexArray(id_);
+  glBindVertexArray(id);
   return ScopeGuard([]() { glBindVertexArray(0); });
 }
 
 void VAO::use(ScopeGuard &previous) noexcept {
   previous.reset([]() { glBindVertexArray(0); });
-  glBindVertexArray(id_);
+  glBindVertexArray(id);
 }
 
 Glyph::Glyph(FT_GlyphSlot glyph) noexcept
@@ -334,10 +334,10 @@ Glyph::Glyph(FT_GlyphSlot glyph) noexcept
       yMax(glyph->bitmap_top),
       advance(glyph->advance.x / 64) {}
 
-Font::Font() noexcept : face_(nullptr, FT_Done_Face) {}
+Font::Font() noexcept : face(nullptr, FT_Done_Face) {}
 
 Font::Font(path const &filename)
-    : face_(
+    : face(
           [&filename]() {
             FT_Face face;
             path p(ASSET_PREFIX);
@@ -352,25 +352,25 @@ Font::Font(path const &filename)
           FT_Done_Face) {}
 
 Font &Font::setSize(unsigned size) noexcept {
-  size_ = size;
-  FT_Set_Pixel_Sizes(face_.get(), 0, size_);
+  size = size;
+  FT_Set_Pixel_Sizes(face.get(), 0, size);
   return *this;
 }
 
 Glyph &Font::glyph(char32_t c) const noexcept {
-  pair<unsigned, char32_t> key(size_, c);
-  auto found = cache_.find(key);
-  if (found != cache_.end()) {
+  pair<unsigned, char32_t> key(size, c);
+  auto found = cache.find(key);
+  if (found != cache.end()) {
     return found->second;
   } else {
 #ifndef NDEBUG
     FT_Error result =
 #endif
-        FT_Load_Glyph(face_.get(), FT_Get_Char_Index(face_.get(), c),
+        FT_Load_Glyph(face.get(), FT_Get_Char_Index(face.get(), c),
                       FT_LOAD_RENDER);
     assert((result == FT_Err_Ok) && "Failed to load glyph");
-    cache_.emplace(key, Glyph(face_.get()->glyph));
-    return cache_.at(key);
+    cache.emplace(key, Glyph(face.get()->glyph));
+    return cache.at(key);
   }
 }
 
@@ -396,9 +396,9 @@ void ResourceManager::loadSplash() {
   };
   backgroundVAO = VAO(backgroundVBO, quadEBO, quadAttributes);
   busyCursor.reset(SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_WAIT));
-  image2Dv_ = make_unique<VertexShader>("image2D.v.glsl");
+  image2Dv = make_unique<VertexShader>("image2D.v.glsl");
   FragmentShader image2Df("image2D.f.glsl");
-  image2D = ShaderProgram(*image2Dv_, image2Df);
+  image2D = ShaderProgram(*image2Dv, image2Df);
 }
 
 void ResourceManager::loadGame() {
@@ -408,7 +408,7 @@ void ResourceManager::loadGame() {
   textbox = Texture2D(path("menu") / "textbox.tga");
   passwordLabel = Texture2D(path("menu") / "passwordLabel.tga");
   FragmentShader text2Df("text2D.f.glsl");
-  text2D = ShaderProgram(*image2Dv_, text2Df);
+  text2D = ShaderProgram(*image2Dv, text2Df);
   VertexShader solid2Dv("solid2D.v.glsl");
   FragmentShader solid2Df("solid2D.f.glsl");
   solid2D = ShaderProgram(solid2Dv, solid2Df);
@@ -449,7 +449,7 @@ void ResourceManager::loadGame() {
 
   arrowCursor.reset(SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW));
 
-  image2Dv_.reset();
+  image2Dv.reset();
 }
 
 std::unique_ptr<ResourceManager> resources;

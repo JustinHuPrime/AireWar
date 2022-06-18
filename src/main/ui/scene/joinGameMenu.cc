@@ -34,25 +34,25 @@ namespace airewar::ui::scene {
 class JoinGameMenu final {
  public:
   JoinGameMenu() noexcept
-      : background_(resources->joinGameBackground),
-        title_(Image2D::centered(resources->joinGameTitle, 0.5f, layout(0, 4))),
-        serverAddressLabel_(Image2D::alignBottom(resources->serverAddressLabel,
-                                                 0.5f, layout(1, 4))),
-        serverAddress_(
+      : background(resources->joinGameBackground),
+        title(Image2D::centered(resources->joinGameTitle, 0.5f, layout(0, 4))),
+        serverAddressLabel(Image2D::alignBottom(resources->serverAddressLabel,
+                                                0.5f, layout(1, 4))),
+        serverAddress(
             Textbox2D::alignTop(resources->orbitron, resources->textbox,
                                 {0.0f, 0.0f, 0.0f, 1.0f}, 0.5f, layout(1, 4))),
-        passwordLabel_(
+        passwordLabel(
             Image2D::alignBottom(resources->passwordLabel, 0.5f, layout(2, 4))),
-        password_(Textbox2D::alignTop(resources->orbitron, resources->textbox,
-                                      {0.0f, 0.0f, 0.0f, 1.0f}, 0.5f,
-                                      layout(2, 4))),
-        back_(Button2D::alignRight(resources->backOn, resources->backOff, 0.5f,
-                                   layout(3, 4))),
-        join_(Button2D::alignLeft(resources->joinOn, resources->joinOff, 0.5f,
+        password(Textbox2D::alignTop(resources->orbitron, resources->textbox,
+                                     {0.0f, 0.0f, 0.0f, 1.0f}, 0.5f,
+                                     layout(2, 4))),
+        back(Button2D::alignRight(resources->backOn, resources->backOff, 0.5f,
                                   layout(3, 4))),
-        clickedButton_(nullptr),
-        clickedTextbox_(nullptr),
-        activeTextbox_(nullptr) {}
+        join(Button2D::alignLeft(resources->joinOn, resources->joinOff, 0.5f,
+                                 layout(3, 4))),
+        clickedButton(nullptr),
+        clickedTextbox(nullptr),
+        activeTextbox(nullptr) {}
 
   JoinGameMenu(JoinGameMenu const &) noexcept = delete;
   JoinGameMenu(JoinGameMenu &&) noexcept = delete;
@@ -63,32 +63,32 @@ class JoinGameMenu final {
   JoinGameMenu &operator=(JoinGameMenu &&) noexcept = delete;
 
   void draw() noexcept {
-    background_.draw();
-    title_.draw();
-    serverAddressLabel_.draw();
-    serverAddress_.draw();
-    passwordLabel_.draw();
-    password_.draw();
-    back_.draw();
-    join_.draw();
+    background.draw();
+    title.draw();
+    serverAddressLabel.draw();
+    serverAddress.draw();
+    passwordLabel.draw();
+    password.draw();
+    back.draw();
+    join.draw();
   }
 
   void downAt(int32_t x, int32_t y) noexcept {
-    if (activeTextbox_) {
+    if (activeTextbox) {
       SDL_StopTextInput();
-      activeTextbox_->active = false;
-      activeTextbox_ = nullptr;
+      activeTextbox->active = false;
+      activeTextbox = nullptr;
     }
-    if (serverAddress_.clicked(x, y)) {
-      clickedTextbox_ = &serverAddress_;
-    } else if (password_.clicked(x, y)) {
-      clickedTextbox_ = &password_;
-    } else if (back_.clicked(x, y)) {
-      clickedButton_ = &back_;
-      back_.on = true;
-    } else if (join_.clicked(x, y)) {
-      clickedButton_ = &join_;
-      join_.on = true;
+    if (serverAddress.clicked(x, y)) {
+      clickedTextbox = &serverAddress;
+    } else if (password.clicked(x, y)) {
+      clickedTextbox = &password;
+    } else if (back.clicked(x, y)) {
+      clickedButton = &back;
+      back.on = true;
+    } else if (join.clicked(x, y)) {
+      clickedButton = &join;
+      join.on = true;
     }
   }
 
@@ -99,28 +99,28 @@ class JoinGameMenu final {
   };
 
   Action upAt(int32_t x, int32_t y) noexcept {
-    if (clickedTextbox_) {
-      if (serverAddress_.clicked(x, y) && clickedTextbox_ == &serverAddress_) {
-        activeTextbox_ = clickedTextbox_;
+    if (clickedTextbox) {
+      if (serverAddress.clicked(x, y) && clickedTextbox == &serverAddress) {
+        activeTextbox = clickedTextbox;
         SDL_StartTextInput();
-        serverAddress_.active = true;
-      } else if (password_.clicked(x, y) && clickedTextbox_ == &password_) {
-        activeTextbox_ = clickedTextbox_;
+        serverAddress.active = true;
+      } else if (password.clicked(x, y) && clickedTextbox == &password) {
+        activeTextbox = clickedTextbox;
         SDL_StartTextInput();
-        password_.active = true;
+        password.active = true;
       }
-      clickedTextbox_ = nullptr;
+      clickedTextbox = nullptr;
       return Action::NONE;
-    } else if (clickedButton_) {
-      clickedButton_->on = false;
-      if (back_.clicked(x, y) && clickedButton_ == &back_) {
-        clickedButton_ = nullptr;
+    } else if (clickedButton) {
+      clickedButton->on = false;
+      if (back.clicked(x, y) && clickedButton == &back) {
+        clickedButton = nullptr;
         return Action::BACK;
-      } else if (join_.clicked(x, y) && clickedButton_ == &join_) {
-        clickedButton_ = nullptr;
+      } else if (join.clicked(x, y) && clickedButton == &join) {
+        clickedButton = nullptr;
         return Action::JOIN;
       } else {
-        clickedButton_ = nullptr;
+        clickedButton = nullptr;
         return Action::NONE;
       }
     } else {
@@ -129,49 +129,49 @@ class JoinGameMenu final {
   }
 
   void textInput(u32string const &text) noexcept {
-    if (activeTextbox_) activeTextbox_->textInput(text);
+    if (activeTextbox) activeTextbox->textInput(text);
   }
 
   void textEditing(u32string const &text) noexcept {
-    if (activeTextbox_) activeTextbox_->textEditing(text);
+    if (activeTextbox) activeTextbox->textEditing(text);
   }
 
   void left() noexcept {
-    if (activeTextbox_) activeTextbox_->left();
+    if (activeTextbox) activeTextbox->cursorLeft();
   }
 
   void right() noexcept {
-    if (activeTextbox_) activeTextbox_->right();
+    if (activeTextbox) activeTextbox->cursorRight();
   }
 
   void home() noexcept {
-    if (activeTextbox_) activeTextbox_->home();
+    if (activeTextbox) activeTextbox->cursorHome();
   }
 
   void end() noexcept {
-    if (activeTextbox_) activeTextbox_->end();
+    if (activeTextbox) activeTextbox->cursorEnd();
   }
 
   void backspace() noexcept {
-    if (activeTextbox_) activeTextbox_->backspace();
+    if (activeTextbox) activeTextbox->backspace();
   }
 
-  u32string address() const noexcept { return serverAddress_; }
+  u32string getAddress() const noexcept { return serverAddress; }
 
-  u32string password() const noexcept { return password_; }
+  u32string getPassword() const noexcept { return password; }
 
  private:
-  Background2D background_;
-  Image2D title_;
-  Image2D serverAddressLabel_;
-  Textbox2D serverAddress_;
-  Image2D passwordLabel_;
-  Textbox2D password_;
-  Button2D back_;
-  Button2D join_;
-  Button2D *clickedButton_;
-  Textbox2D *clickedTextbox_;
-  Textbox2D *activeTextbox_;
+  Background2D background;
+  Image2D title;
+  Image2D serverAddressLabel;
+  Textbox2D serverAddress;
+  Image2D passwordLabel;
+  Textbox2D password;
+  Button2D back;
+  Button2D join;
+  Button2D *clickedButton;
+  Textbox2D *clickedTextbox;
+  Textbox2D *activeTextbox;
 };
 
 void joinGameMenu() noexcept {
@@ -194,8 +194,8 @@ void joinGameMenu() noexcept {
               return mainMenu();
             }
             case JoinGameMenu::Action::JOIN: {
-              return joinWaitingRoom(joinGameMenu.address(),
-                                     joinGameMenu.password());
+              return joinWaitingRoom(joinGameMenu.getAddress(),
+                                     joinGameMenu.getPassword());
             }
           }
           break;

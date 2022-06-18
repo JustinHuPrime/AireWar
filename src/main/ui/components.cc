@@ -34,15 +34,15 @@ float clipX(float x) { return x * 2.0f - 1.0f; }
 float clipY(float y) { return (1.0f - y) * 2.0f - 1.0f; }
 
 float scaleX(Texture2D const &tex) {
-  return tex.width() / Texture2D::SCREEN_WIDTH;
+  return tex.getWidth() / Texture2D::SCREEN_WIDTH;
 }
 
 float scaleY(Texture2D const &tex) {
-  return tex.height() / Texture2D::SCREEN_HEIGHT;
+  return tex.getWidth() / Texture2D::SCREEN_HEIGHT;
 }
 
 float tex2Window(float x) {
-  return x / Texture2D::SCREEN_WIDTH * window->width();
+  return x / Texture2D::SCREEN_WIDTH * window->getWidth();
 }
 
 float distance(float x1, float y1, float x2, float y2) {
@@ -52,26 +52,26 @@ float distance(float x1, float y1, float x2, float y2) {
 void drawChar(Font &font, VBO &glyphVBO, float &x, float y,
               char32_t c) noexcept {
   Glyph &glyph = font.glyph(c);
-  glyphVBO.update({clipX(x + glyph.xMin / window->width()),
-                   clipY(y - glyph.yMin / window->height()), 0.0f, 1.0f,
-                   clipX(x + glyph.xMax / window->width()),
-                   clipY(y - glyph.yMin / window->height()), 1.0f, 1.0f,
-                   clipX(x + glyph.xMax / window->width()),
-                   clipY(y - glyph.yMax / window->height()), 1.0f, 0.0f,
-                   clipX(x + glyph.xMin / window->width()),
-                   clipY(y - glyph.yMax / window->height()), 0.0f, 0.0f},
+  glyphVBO.update({clipX(x + glyph.xMin / window->getWidth()),
+                   clipY(y - glyph.yMin / window->getHeight()), 0.0f, 1.0f,
+                   clipX(x + glyph.xMax / window->getWidth()),
+                   clipY(y - glyph.yMin / window->getHeight()), 1.0f, 1.0f,
+                   clipX(x + glyph.xMax / window->getWidth()),
+                   clipY(y - glyph.yMax / window->getHeight()), 1.0f, 0.0f,
+                   clipX(x + glyph.xMin / window->getWidth()),
+                   clipY(y - glyph.yMax / window->getHeight()), 0.0f, 0.0f},
                   0);
   glyph.texture.use(GL_TEXTURE0);
   resources->text2D.setUniform("tex", 0);
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
-  x += glyph.advance / window->width();
+  x += glyph.advance / window->getWidth();
 }
 }  // namespace
 
-Background2D::Background2D(Texture2D &texture) noexcept : texture_(texture) {}
+Background2D::Background2D(Texture2D &texture) noexcept : texture(texture) {}
 
 void Background2D::draw() noexcept {
-  texture_.use(GL_TEXTURE0);
+  texture.use(GL_TEXTURE0);
   ScopeGuard guard = resources->backgroundVAO.use();
   resources->image2D.use();
   resources->image2D.setUniform("tex", 0);
@@ -86,28 +86,28 @@ Image2D Image2D::alignBottom(Texture2D &texture, float x, float y) noexcept {
   return Image2D(texture, x - scaleX(texture) / 2.0f, y - scaleY(texture));
 }
 Image2D::Image2D(Texture2D &texture, float x, float y) noexcept
-    : texture_(texture),
-      vbo_(
+    : texture(texture),
+      vbo(
           {
-              clipX(x), clipY(y + scaleY(texture_)),  // bottom left pos
-              0.0f, 0.0f,                             // bottom left tex
+              clipX(x), clipY(y + scaleY(texture)),  // bottom left pos
+              0.0f, 0.0f,                            // bottom left tex
 
-              clipX(x + scaleX(texture_)),
-              clipY(y + scaleY(texture_)),  // bottom right pos
-              1.0f, 0.0f,                   // bottom right tex
+              clipX(x + scaleX(texture)),
+              clipY(y + scaleY(texture)),  // bottom right pos
+              1.0f, 0.0f,                  // bottom right tex
 
-              clipX(x + scaleX(texture_)), clipY(y),  // top right pos
-              1.0f, 1.0f,                             // top right tex
+              clipX(x + scaleX(texture)), clipY(y),  // top right pos
+              1.0f, 1.0f,                            // top right tex
 
               clipX(x), clipY(y),  // top left pos
               0.0f, 1.0f,          // top left tex
           },
           GL_STATIC_DRAW),
-      vao_(vbo_, resources->quadEBO, resources->quadAttributes) {}
+      vao(vbo, resources->quadEBO, resources->quadAttributes) {}
 
 void Image2D::draw() noexcept {
-  texture_.use(GL_TEXTURE0);
-  ScopeGuard guard = vao_.use();
+  texture.use(GL_TEXTURE0);
+  ScopeGuard guard = vao.use();
   resources->image2D.use();
   resources->image2D.setUniform("tex", 0);
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
@@ -132,38 +132,38 @@ Button2D Button2D::alignLeft(Texture2D &onTexture, Texture2D &offTexture,
 Button2D::Button2D(Texture2D &onTexture, Texture2D &offTexture, float x,
                    float y) noexcept
     : on(false),
-      onTexture_(onTexture),
-      offTexture_(offTexture),
-      vbo_(
+      onTexture(onTexture),
+      offTexture(offTexture),
+      vbo(
           {
-              clipX(x), clipY(y + scaleY(onTexture_)),  // bottom left pos
-              0.0f, 0.0f,                               // bottom left tex
+              clipX(x), clipY(y + scaleY(onTexture)),  // bottom left pos
+              0.0f, 0.0f,                              // bottom left tex
 
-              clipX(x + scaleX(onTexture_)),
-              clipY(y + scaleY(onTexture_)),  // bottom right pos
-              1.0f, 0.0f,                     // bottom right tex
+              clipX(x + scaleX(onTexture)),
+              clipY(y + scaleY(onTexture)),  // bottom right pos
+              1.0f, 0.0f,                    // bottom right tex
 
-              clipX(x + scaleX(onTexture_)), clipY(y),  // top right pos
-              1.0f, 1.0f,                               // top right tex
+              clipX(x + scaleX(onTexture)), clipY(y),  // top right pos
+              1.0f, 1.0f,                              // top right tex
 
               clipX(x), clipY(y),  // top left pos
               0.0f, 1.0f,          // top left tex
           },
           GL_STATIC_DRAW),
-      vao_(vbo_, resources->quadEBO, resources->quadAttributes),
-      left_(x * window->width()),
-      right_((x + scaleX(onTexture_)) * window->width()),
-      top_(y * window->height()),
-      bottom_((y + scaleY(onTexture_)) * window->height()) {
-  assert((onTexture_.width() == offTexture_.width()) &&
+      vao(vbo, resources->quadEBO, resources->quadAttributes),
+      left(x * window->getWidth()),
+      right((x + scaleX(onTexture)) * window->getWidth()),
+      top(y * window->getHeight()),
+      bottom((y + scaleY(onTexture)) * window->getHeight()) {
+  assert((onTexture.getWidth() == offTexture.getWidth()) &&
          "on and off textures must have the same width");
-  assert((onTexture_.height() == offTexture_.height()) &&
+  assert((onTexture.getHeight() == offTexture.getHeight()) &&
          "on and off textures must have the same height");
 }
 
 void Button2D::draw() noexcept {
-  (on ? onTexture_ : offTexture_).use(GL_TEXTURE0);
-  ScopeGuard guard = vao_.use();
+  (on ? onTexture : offTexture).use(GL_TEXTURE0);
+  ScopeGuard guard = vao.use();
   resources->image2D.use();
   resources->image2D.setUniform("tex", 0);
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
@@ -171,13 +171,13 @@ void Button2D::draw() noexcept {
 
 bool Button2D::clicked(int32_t x, int32_t y) const noexcept {
   float scaledRadius = tex2Window(RADIUS);
-  float innerLeft = left_ + scaledRadius;
-  float innerRight = right_ - scaledRadius;
-  float innerTop = top_ + scaledRadius;
-  float innerBottom = bottom_ - scaledRadius;
-  if (innerLeft <= x && x <= innerRight && top_ <= y && y <= bottom_)
+  float innerLeft = left + scaledRadius;
+  float innerRight = right - scaledRadius;
+  float innerTop = top + scaledRadius;
+  float innerBottom = bottom - scaledRadius;
+  if (innerLeft <= x && x <= innerRight && top <= y && y <= bottom)
     return true;
-  else if (left_ <= x && x <= right_ && innerTop <= y && y <= innerBottom)
+  else if (left <= x && x <= right && innerTop <= y && y <= innerBottom)
     return true;
   else if (distance(innerLeft, innerBottom, x, y) <= scaledRadius ||
            distance(innerLeft, innerTop, x, y) <= scaledRadius ||
@@ -196,73 +196,74 @@ Textbox2D Textbox2D::alignTop(Font &font, Texture2D &texture,
 Textbox2D::Textbox2D(Font &font, Texture2D &texture, vec4 const &colour,
                      float x, float y) noexcept
     : active(false),
-      font_(font),
-      texture_(texture),
-      colour_(colour),
-      vbo_(
+      font(font),
+      texture(texture),
+      colour(colour),
+      vbo(
           {
-              clipX(x), clipY(y + scaleY(texture_)),  // bottom left pos
-              0.0f, 0.0f,                             // bottom left tex
+              clipX(x), clipY(y + scaleY(texture)),  // bottom left pos
+              0.0f, 0.0f,                            // bottom left tex
 
-              clipX(x + scaleX(texture_)),
-              clipY(y + scaleY(texture_)),  // bottom right pos
-              1.0f, 0.0f,                   // bottom right tex
+              clipX(x + scaleX(texture)),
+              clipY(y + scaleY(texture)),  // bottom right pos
+              1.0f, 0.0f,                  // bottom right tex
 
-              clipX(x + scaleX(texture_)), clipY(y),  // top right pos
-              1.0f, 1.0f,                             // top right tex
+              clipX(x + scaleX(texture)), clipY(y),  // top right pos
+              1.0f, 1.0f,                            // top right tex
 
               clipX(x), clipY(y),  // top left pos
               0.0f, 1.0f,          // top left tex
           },
           GL_STATIC_DRAW),
-      vao_(vbo_, resources->quadEBO, resources->quadAttributes),
-      left_(x * window->width()),
-      right_((x + scaleX(texture_)) * window->width()),
-      top_(y * window->height()),
-      bottom_((y + scaleY(texture_)) * window->height()),
-      preCursor_(),
-      composition_(),
-      postCursor_(),
-      glyphVBO_(vector<float>(16), GL_DYNAMIC_DRAW),
-      glyphVAO_(glyphVBO_, resources->quadEBO, resources->quadAttributes),
-      cursorVBO_(vector<float>(4), GL_DYNAMIC_DRAW),
-      cursorVAO_(cursorVBO_, resources->cursorEBO,
-                 resources->cursorAttributes) {}
+      vao(vbo, resources->quadEBO, resources->quadAttributes),
+      left(x * window->getWidth()),
+      right((x + scaleX(texture)) * window->getWidth()),
+      top(y * window->getHeight()),
+      bottom((y + scaleY(texture)) * window->getHeight()),
+      preCursor(),
+      composition(),
+      postCursor(),
+      glyphVBO(vector<float>(16), GL_DYNAMIC_DRAW),
+      glyphVAO(glyphVBO, resources->quadEBO, resources->quadAttributes),
+      cursorVBO(vector<float>(4), GL_DYNAMIC_DRAW),
+      cursorVAO(cursorVBO, resources->cursorEBO, resources->cursorAttributes) {}
 
 Textbox2D::operator std::u32string() const noexcept {
-  return preCursor_ + composition_ + postCursor_;
+  return preCursor + composition + postCursor;
 }
 
 void Textbox2D::draw() noexcept {
-  texture_.use(GL_TEXTURE0);
-  ScopeGuard guard = vao_.use();
+  texture.use(GL_TEXTURE0);
+  ScopeGuard guard = vao.use();
   resources->image2D.use();
   resources->image2D.setUniform("tex", 0);
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
-  font_.setSize(bottom_ - top_ - 2.0f * tex2Window(RADIUS));
+  font.setSize(bottom - top - 2.0f * tex2Window(RADIUS));
 
-  Glyph const &bar = font_.glyph(U'|');
-  float baseline = (bottom_ - tex2Window(RADIUS) + bar.yMin) / window->height();
-  float left = (left_ + tex2Window(RADIUS)) / window->width();
+  Glyph const &bar = font.glyph(U'|');
+  float baseline =
+      (bottom - tex2Window(RADIUS) + bar.yMin) / window->getHeight();
+  float left = (left + tex2Window(RADIUS)) / window->getWidth();
 
-  glyphVAO_.use(guard);
+  glyphVAO.use(guard);
   resources->text2D.use();
-  resources->text2D.setUniform("colour", colour_);
-  for (char32_t const &c : preCursor_)
-    drawChar(font_, glyphVBO_, left, baseline, c);
-  for (char32_t const &c : composition_)
-    drawChar(font_, glyphVBO_, left, baseline, c);
+  resources->text2D.setUniform("colour", colour);
+  for (char32_t const &c : preCursor)
+    drawChar(font, glyphVBO, left, baseline, c);
+  for (char32_t const &c : composition)
+    drawChar(font, glyphVBO, left, baseline, c);
   float cursorPos = left;
-  for (char32_t const &c : postCursor_)
-    drawChar(font_, glyphVBO_, left, baseline, c);
+  for (char32_t const &c : postCursor)
+    drawChar(font, glyphVBO, left, baseline, c);
   if (active) {
-    cursorVAO_.use(guard);
-    cursorVBO_.update({clipX(cursorPos),
-                       clipY((bottom_ - tex2Window(RADIUS)) / window->height()),
-                       clipX(cursorPos),
-                       clipY((top_ + tex2Window(RADIUS)) / window->height())},
-                      0);
+    cursorVAO.use(guard);
+    cursorVBO.update(
+        {clipX(cursorPos),
+         clipY((bottom - tex2Window(RADIUS)) / window->getHeight()),
+         clipX(cursorPos),
+         clipY((top + tex2Window(RADIUS)) / window->getHeight())},
+        0);
     resources->solid2D.use();
     resources->solid2D.setUniform("colour", {0.0f, 0.0f, 0.0f, 1.0f});
     glDrawElements(GL_LINES, 2, GL_UNSIGNED_INT, nullptr);
@@ -273,13 +274,13 @@ void Textbox2D::draw() noexcept {
 
 bool Textbox2D::clicked(int32_t x, int32_t y) const noexcept {
   float scaledRadius = tex2Window(RADIUS);
-  float innerLeft = left_ + scaledRadius;
-  float innerRight = right_ - scaledRadius;
-  float innerTop = top_ + scaledRadius;
-  float innerBottom = bottom_ - scaledRadius;
-  if (innerLeft <= x && x <= innerRight && top_ <= y && y <= bottom_)
+  float innerLeft = left + scaledRadius;
+  float innerRight = right - scaledRadius;
+  float innerTop = top + scaledRadius;
+  float innerBottom = bottom - scaledRadius;
+  if (innerLeft <= x && x <= innerRight && top <= y && y <= bottom)
     return true;
-  else if (left_ <= x && x <= right_ && innerTop <= y && y <= innerBottom)
+  else if (left <= x && x <= right && innerTop <= y && y <= innerBottom)
     return true;
   else if (distance(innerLeft, innerBottom, x, y) <= scaledRadius ||
            distance(innerLeft, innerTop, x, y) <= scaledRadius ||
@@ -291,50 +292,50 @@ bool Textbox2D::clicked(int32_t x, int32_t y) const noexcept {
 }
 
 void Textbox2D::textEditing(std::u32string const &text) noexcept {
-  composition_ = text;
+  composition = text;
 }
 
 void Textbox2D::textInput(std::u32string const &text) noexcept {
-  preCursor_ += text;
+  preCursor += text;
 }
 
-void Textbox2D::left() noexcept {
-  postCursor_ = composition_ + postCursor_;
-  composition_.clear();
-  if (!preCursor_.empty()) {
-    char32_t moved = preCursor_.back();
-    preCursor_.pop_back();
-    postCursor_ = moved + postCursor_;
+void Textbox2D::cursorLeft() noexcept {
+  postCursor = composition + postCursor;
+  composition.clear();
+  if (!preCursor.empty()) {
+    char32_t moved = preCursor.back();
+    preCursor.pop_back();
+    postCursor = moved + postCursor;
   }
 }
 
-void Textbox2D::right() noexcept {
-  preCursor_ += composition_;
-  composition_.clear();
-  if (!postCursor_.empty()) {
-    char32_t moved = postCursor_.front();
-    postCursor_.erase(0, 1);
-    preCursor_ += moved;
+void Textbox2D::cursorRight() noexcept {
+  preCursor += composition;
+  composition.clear();
+  if (!postCursor.empty()) {
+    char32_t moved = postCursor.front();
+    postCursor.erase(0, 1);
+    preCursor += moved;
   }
 }
 
-void Textbox2D::home() noexcept {
-  postCursor_ = preCursor_ + composition_ + postCursor_;
-  composition_.clear();
-  preCursor_.clear();
+void Textbox2D::cursorHome() noexcept {
+  postCursor = preCursor + composition + postCursor;
+  composition.clear();
+  preCursor.clear();
 }
 
-void Textbox2D::end() noexcept {
-  preCursor_ += composition_ + postCursor_;
-  composition_.clear();
-  postCursor_.clear();
+void Textbox2D::cursorEnd() noexcept {
+  preCursor += composition + postCursor;
+  composition.clear();
+  postCursor.clear();
 }
 
 void Textbox2D::backspace() noexcept {
-  if (!composition_.empty()) {
-    composition_.pop_back();
-  } else if (!preCursor_.empty()) {
-    preCursor_.pop_back();
+  if (!composition.empty()) {
+    composition.pop_back();
+  } else if (!preCursor.empty()) {
+    preCursor.pop_back();
   }
 }
 
@@ -345,53 +346,54 @@ TextField2D TextField2D::centered(Font &font, Texture2D &texture,
                      y - scaleY(texture) / 2.0f);
 }
 
-TextField2D::TextField2D(Font &font, Texture2D &texture, vec4 const &colour,
+TextField2D::TextField2D(Font &font_, Texture2D &texture_, vec4 const &colour_,
                          float x, float y) noexcept
     : text(),
-      font_(font),
-      texture_(texture),
-      colour_(colour),
-      vbo_(
+      font(font),
+      texture(texture),
+      colour(colour),
+      vbo(
           {
-              clipX(x), clipY(y + scaleY(texture_)),  // bottom left pos
-              0.0f, 0.0f,                             // bottom left tex
+              clipX(x), clipY(y + scaleY(texture)),  // bottom left pos
+              0.0f, 0.0f,                            // bottom left tex
 
-              clipX(x + scaleX(texture_)),
-              clipY(y + scaleY(texture_)),  // bottom right pos
-              1.0f, 0.0f,                   // bottom right tex
+              clipX(x + scaleX(texture)),
+              clipY(y + scaleY(texture)),  // bottom right pos
+              1.0f, 0.0f,                  // bottom right tex
 
-              clipX(x + scaleX(texture_)), clipY(y),  // top right pos
-              1.0f, 1.0f,                             // top right tex
+              clipX(x + scaleX(texture)), clipY(y),  // top right pos
+              1.0f, 1.0f,                            // top right tex
 
               clipX(x), clipY(y),  // top left pos
               0.0f, 1.0f,          // top left tex
           },
           GL_STATIC_DRAW),
-      vao_(vbo_, resources->quadEBO, resources->quadAttributes),
-      left_(x * window->width()),
-      right_((x + scaleX(texture_)) * window->width()),
-      top_(y * window->height()),
-      bottom_((y + scaleY(texture_)) * window->height()),
-      glyphVBO_(vector<float>(16), GL_DYNAMIC_DRAW),
-      glyphVAO_(glyphVBO_, resources->quadEBO, resources->quadAttributes) {}
+      vao(vbo, resources->quadEBO, resources->quadAttributes),
+      left(x * window->getWidth()),
+      right((x + scaleX(texture)) * window->getWidth()),
+      top(y * window->getHeight()),
+      bottom((y + scaleY(texture)) * window->getHeight()),
+      glyphVBO(vector<float>(16), GL_DYNAMIC_DRAW),
+      glyphVAO(glyphVBO, resources->quadEBO, resources->quadAttributes) {}
 
 void TextField2D::draw() noexcept {
-  texture_.use(GL_TEXTURE0);
-  ScopeGuard guard = vao_.use();
+  texture.use(GL_TEXTURE0);
+  ScopeGuard guard = vao.use();
   resources->image2D.use();
   resources->image2D.setUniform("tex", 0);
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
-  font_.setSize(bottom_ - top_ - 2.0f * tex2Window(RADIUS));
+  font.setSize(bottom - top - 2.0f * tex2Window(RADIUS));
 
-  Glyph const &bar = font_.glyph(U'|');
-  float baseline = (bottom_ - tex2Window(RADIUS) + bar.yMin) / window->height();
-  float left = (left_ + tex2Window(RADIUS)) / window->width();
+  Glyph const &bar = font.glyph(U'|');
+  float baseline =
+      (bottom - tex2Window(RADIUS) + bar.yMin) / window->getHeight();
+  float left = (left + tex2Window(RADIUS)) / window->getWidth();
 
-  glyphVAO_.use(guard);
+  glyphVAO.use(guard);
   resources->text2D.use();
-  resources->text2D.setUniform("colour", colour_);
-  for (char32_t const &c : text) drawChar(font_, glyphVBO_, left, baseline, c);
+  resources->text2D.setUniform("colour", colour);
+  for (char32_t const &c : text) drawChar(font, glyphVBO, left, baseline, c);
 }
 
 float layout(size_t index, size_t count) noexcept {

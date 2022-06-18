@@ -45,33 +45,33 @@ namespace {
 constexpr int POLL_TIMEOUT = 50;
 }
 
-FD::FD() noexcept : fd_(-1) {}
+FD::FD() noexcept : fd(-1) {}
 
-FD::FD(int fd) noexcept : fd_(fd) {}
+FD::FD(int fd) noexcept : fd(fd) {}
 
-FD::FD(FD &&other) noexcept : fd_(other.fd_) { other.fd_ = -1; }
+FD::FD(FD &&other) noexcept : fd(other.fd) { other.fd = -1; }
 
 FD::~FD() noexcept {
-  if (fd_ != -1) close(fd_);
+  if (fd != -1) close(fd);
 }
 
 FD &FD::operator=(FD &&other) noexcept {
-  swap(fd_, other.fd_);
+  swap(fd, other.fd);
   return *this;
 }
 
-bool FD::operator!() const noexcept { return fd_ == -1; }
+bool FD::operator!() const noexcept { return fd == -1; }
 
-FD::operator bool() const noexcept { return fd_ != -1; }
+FD::operator bool() const noexcept { return fd != -1; }
 
-int FD::get() noexcept { return fd_; }
+int FD::get() noexcept { return fd; }
 
 Connection::Connection(FD fd, atomic_bool const &stop) noexcept
-    : fd_(std::move(fd)), stop_(stop) {}
+    : fd(std::move(fd)), stop(stop) {}
 
 Connection::Connection(string const &address, uint16_t port,
                        atomic_bool const &stop)
-    : stop_(stop) {
+    : stop(stop) {
   struct addrinfo hints;
   memset(&hints, 0, sizeof(hints));
   hints.ai_family = AF_UNSPEC;
@@ -86,7 +86,7 @@ Connection::Connection(string const &address, uint16_t port,
 
   unique_ptr<struct addrinfo, decltype(&freeaddrinfo)> result(rawResult,
                                                               freeaddrinfo);
-  for (struct addrinfo *curr = result.get(); curr != nullptr && !fd_;
+  for (struct addrinfo *curr = result.get(); curr != nullptr && !fd;
        curr = curr->ai_next) {
     FD attempt(socket(curr->ai_family, curr->ai_socktype | SOCK_NONBLOCK,
                       curr->ai_protocol));
@@ -95,7 +95,7 @@ Connection::Connection(string const &address, uint16_t port,
     // start connection attempt
     int retval = connect(attempt.get(), curr->ai_addr, curr->ai_addrlen);
     if (retval == 0) {
-      fd_ = move(attempt);
+      fd = move(attempt);
     } else if (retval == -1 && errno == EINPROGRESS) {
       // need to wait a bit and try again
       struct pollfd fds;
@@ -106,7 +106,7 @@ Connection::Connection(string const &address, uint16_t port,
       bool connecting = true;
       while (connecting) {
         int pollResult = poll(&fds, 1, POLL_TIMEOUT);
-        if (stop_) throw StopFlag();
+        if (stop) throw StopFlag();
         switch (pollResult) {
           case 0: {
             break;
@@ -119,7 +119,7 @@ Connection::Connection(string const &address, uint16_t port,
             if (getsockopt(attempt.get(), SOL_SOCKET, SO_ERROR, &errored,
                            &len) == 0 &&
                 errored == 0)
-              fd_ = move(attempt);
+              fd = move(attempt);
 
             break;
           }
@@ -133,20 +133,20 @@ Connection::Connection(string const &address, uint16_t port,
     }
   }
 
-  if (!fd_)
+  if (!fd)
     throw SocketException("Could not connect to server: "s + strerror(errno));
 }
 
 void Connection::sendRaw(void const *data, size_t length) {
   struct pollfd fds;
   memset(&fds, 0, sizeof(fds));
-  fds.fd = fd_.get();
+  fds.fd = fd.get();
   fds.events = POLLOUT;
 
   size_t curr = 0;
   while (curr != length) {
     int pollResult = poll(&fds, 1, POLL_TIMEOUT);
-    if (stop_) throw StopFlag();
+    if (stop) throw StopFlag();
 
     switch (pollResult) {
       case 0: {
@@ -154,7 +154,7 @@ void Connection::sendRaw(void const *data, size_t length) {
       }
       case 1: {
         ssize_t sizeRead =
-            ::send(fd_.get(), reinterpret_cast<char const *>(data) + curr,
+            ::send(fd.get(), reinterpret_cast<char const *>(data) + curr,
                    length - curr, 0);
         if (sizeRead == -1) {
           switch (int errnoSave = errno; errnoSave) {
@@ -184,13 +184,13 @@ void Connection::sendRaw(void const *data, size_t length) {
 void Connection::recvRaw(void *data, size_t length) {
   struct pollfd fds;
   memset(&fds, 0, sizeof(fds));
-  fds.fd = fd_.get();
+  fds.fd = fd.get();
   fds.events = POLLIN;
 
   size_t curr = 0;
   while (curr != length) {
     int pollResult = poll(&fds, 1, POLL_TIMEOUT);
-    if (stop_) throw StopFlag();
+    if (stop) throw StopFlag();
 
     switch (pollResult) {
       case 0: {
@@ -198,7 +198,7 @@ void Connection::recvRaw(void *data, size_t length) {
       }
       case 1: {
         ssize_t sizeRead = ::recv(
-            fd_.get(), reinterpret_cast<char *>(data) + curr, length - curr, 0);
+            fd.get(), reinterpret_cast<char *>(data) + curr, length - curr, 0);
         if (sizeRead == -1) {
           switch (int errnoSave = errno; errnoSave) {
             case EAGAIN:
@@ -225,7 +225,7 @@ void Connection::recvRaw(void *data, size_t length) {
 }
 
 Server::Server(uint16_t port, string const &password, atomic_bool const &stop)
-    : password_(password), stop_(stop) {
+    : password(password), stop(stop) {
   struct addrinfo hints;
   memset(&hints, 0, sizeof(hints));
   hints.ai_family = AF_UNSPEC;
@@ -239,7 +239,7 @@ Server::Server(uint16_t port, string const &password, atomic_bool const &stop)
 
   unique_ptr<struct addrinfo, decltype(&freeaddrinfo)> result(rawResult,
                                                               freeaddrinfo);
-  for (struct addrinfo *curr = result.get(); curr != nullptr && !fd_;
+  for (struct addrinfo *curr = result.get(); curr != nullptr && !fd;
        curr = curr->ai_next) {
     FD attempt(socket(curr->ai_family, curr->ai_socktype | SOCK_NONBLOCK,
                       curr->ai_protocol));
@@ -251,32 +251,31 @@ Server::Server(uint16_t port, string const &password, atomic_bool const &stop)
       continue;
 
     if (bind(attempt.get(), curr->ai_addr, curr->ai_addrlen) == 0)
-      fd_ = move(attempt);
+      fd = move(attempt);
   }
 
-  if (!fd_)
-    throw SocketException("Could not bind to port: "s + strerror(errno));
+  if (!fd) throw SocketException("Could not bind to port: "s + strerror(errno));
 
-  if (listen(fd_.get(), SOMAXCONN) != 0)
+  if (listen(fd.get(), SOMAXCONN) != 0)
     throw SocketException("Could not listen on port: "s + strerror(errno));
 }
 
 unique_ptr<airewar::game::networking::Connection> Server::accept() {
   struct pollfd fds;
   memset(&fds, 0, sizeof(fds));
-  fds.fd = fd_.get();
+  fds.fd = fd.get();
   fds.events = POLLIN;
   int pollResult = poll(&fds, 1, POLL_TIMEOUT);
-  if (stop_) throw StopFlag();
+  if (stop) throw StopFlag();
 
   switch (pollResult) {
     case 0: {
       return nullptr;
     }
     case 1: {
-      if (int retval = accept4(fd_.get(), nullptr, nullptr, SOCK_NONBLOCK);
+      if (int retval = accept4(fd.get(), nullptr, nullptr, SOCK_NONBLOCK);
           retval != -1) {
-        return make_unique<Connection>(FD(retval), stop_);
+        return make_unique<Connection>(FD(retval), stop);
       } else {
         throw SocketException("Accept failed: "s + strerror(errno));
       }

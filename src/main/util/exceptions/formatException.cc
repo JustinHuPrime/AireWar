@@ -23,7 +23,7 @@ using namespace std;
 
 namespace airewar::util::exceptions {
 FormatException::FormatException(string const &message) noexcept
-    : message_(message) {}
+    : message(message) {}
 
-char const *FormatException::what() const noexcept { return message_.c_str(); }
+char const *FormatException::what() const noexcept { return message.c_str(); }
 }  // namespace airewar::util::exceptions

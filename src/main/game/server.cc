@@ -37,15 +37,15 @@ namespace airewar::game {
 Server::Connection::Connection(
     Server &server, std::unique_ptr<networking::Connection> socket) noexcept
     : state(State::STARTING),
-      server_(server),
-      connection_(move(socket)),
-      thread_([this]() { return run(); }) {}
+      server(server),
+      connection(move(socket)),
+      thread([this]() { return run(); }) {}
 
-Server::Connection::~Connection() { thread_.join(); }
+Server::Connection::~Connection() { thread.join(); }
 
 void Server::Connection::run() noexcept {
   try {
-    if (!connection_->handshake(server_.password_)) {
+    if (!connection->handshake(server.password)) {
       // incorrect password - kill connection
       state = State::DONE;
       return;
@@ -53,25 +53,25 @@ void Server::Connection::run() noexcept {
 
     {
       // check for number of players
-      scoped_lock lock(server_.connectionMutex_);
-      if (count_if(server_.connections_.begin(), server_.connections_.end(),
+      scoped_lock lock(server.connectionMutex);
+      if (count_if(server.connections.begin(), server.connections.end(),
                    [](Connection const &connection) {
                      return connection.state == State::RUNNING;
                    }) >= NUM_PLAYERS) {
         // too many players
-        *connection_ << false;
-        connection_->flush();
+        *connection << false;
+        connection->flush();
         state = State::DONE;
         return;
       } else {
-        *connection_ << true;
-        connection_->flush();
+        *connection << true;
+        connection->flush();
         state = State::RUNNING;
       }
     }
 
-    *connection_ << server_.map_.getSeed();
-    connection_->flush();
+    *connection << server.map.getSeed();
+    connection->flush();
 
     // TODO: rest of game logic
   } catch (SocketException const &e) {
@@ -86,40 +86,39 @@ void Server::Connection::run() noexcept {
 Server::Server(u32string const &password) noexcept
     : state(State::STARTING),
       errorMessage(),
-      password_([&password]() {
+      password([&password]() {
         wstring_convert<codecvt_utf8<char32_t>, char32_t> converter;
         return converter.to_bytes(password);
       }()),
-      stop_(false),
-      server_(),
-      rng_(random_device()()),
-      map_(),
-      thread_([this]() { return run(); }) {}
+      stop(false),
+      server(),
+      rng(random_device()()),
+      map(),
+      thread([this]() { return run(); }) {}
 
 Server::~Server() {
-  stop_ = true;
-  thread_.join();
+  stop = true;
+  thread.join();
 }
 
 void Server::run() noexcept {
   try {
-    map_.generate(rng_());
+    map.generate(rng());
 
-    server_ =
-        networking::Server::makeServer(networking::PORT, password_, stop_);
+    server = networking::Server::makeServer(networking::PORT, password, stop);
     state = State::RUNNING;
 
     while (true) {
-      unique_ptr<networking::Connection> accepted = server_->accept();
+      unique_ptr<networking::Connection> accepted = server->accept();
       if (accepted) {
-        scoped_lock lock(connectionMutex_);
-        connections_.emplace_back(*this, move(accepted));
+        scoped_lock lock(connectionMutex);
+        connections.emplace_back(*this, move(accepted));
       }
 
       {
         // reap dead connections
-        scoped_lock lock(connectionMutex_);
-        connections_.remove_if([](Connection const &c) {
+        scoped_lock lock(connectionMutex);
+        connections.remove_if([](Connection const &c) {
           return c.state == Connection::State::DONE;
         });
       }

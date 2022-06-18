@@ -36,32 +36,32 @@ Client::Client(u32string const &address, u32string const &password) noexcept
     : map(),
       state(State::STARTING),
       errorMessage(),
-      address_(address),
-      password_(password),
-      stop_(false),
-      connection_(),
-      thread_([this]() { return run(); }) {}
+      address(address),
+      password(password),
+      stop(false),
+      connection(),
+      thread([this]() { return run(); }) {}
 
 Client::~Client() noexcept {
-  stop_ = true;
-  thread_.join();
+  stop = true;
+  thread.join();
 }
 
 void Client::run() noexcept {
   try {
     wstring_convert<codecvt_utf8<char32_t>, char32_t> converter;
-    string addressStr = converter.to_bytes(address_);
-    connection_ = networking::Connection::makeClient(
-        converter.to_bytes(address_), networking::PORT, stop_);
+    string addressStr = converter.to_bytes(address);
+    connection = networking::Connection::makeClient(converter.to_bytes(address),
+                                                    networking::PORT, stop);
 
-    if (!connection_->handshake(converter.to_bytes(password_))) {
+    if (!connection->handshake(converter.to_bytes(password))) {
       errorMessage = "Incorrect password";
       state = State::ERROR;
       return;
     }
 
     bool hasSlot;
-    *connection_ >> hasSlot;
+    *connection >> hasSlot;
     if (!hasSlot) {
       errorMessage = "No slot available";
       state = State::ERROR;
@@ -69,7 +69,7 @@ void Client::run() noexcept {
     }
 
     uint64_t seed;
-    *connection_ >> seed;
+    *connection >> seed;
     state = State::GENERATING_MAP;
     map.generate(seed);
 

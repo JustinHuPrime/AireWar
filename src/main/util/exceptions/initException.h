@@ -37,13 +37,13 @@ class InitException final : public std::exception {
   InitException &operator=(InitException &&) noexcept = default;
 
   char const *what() const noexcept override;
-  std::string const &title() const noexcept;
-  std::string const &message() const noexcept;
+  std::string const &getTitle() const noexcept;
+  std::string const &getMessage() const noexcept;
 
  private:
-  std::string title_;
-  std::string message_;
-  std::string what_;
+  std::string title;
+  std::string message;
+  std::string whatString;
 };
 }  // namespace airewar::util::exceptions
 

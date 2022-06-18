@@ -38,7 +38,7 @@ class FormatException final : public std::exception {
   char const *what() const noexcept override;
 
  private:
-  std::string message_;
+  std::string message;
 };
 }  // namespace airewar::util::exceptions
 

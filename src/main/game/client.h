@@ -53,12 +53,12 @@ class Client final {
   Client &operator=(Client &&) noexcept = delete;
 
  private:
-  std::u32string address_;
-  std::u32string password_;
-  std::atomic_bool stop_;
-  std::unique_ptr<networking::Connection> connection_;
+  std::u32string address;
+  std::u32string password;
+  std::atomic_bool stop;
+  std::unique_ptr<networking::Connection> connection;
 
-  std::thread thread_;
+  std::thread thread;
 
   void run() noexcept;
 };

@@ -40,7 +40,7 @@ class ScopeGuard final {
   void reset(std::function<void()> const &f) noexcept;
 
  private:
-  std::function<void()> f_;
+  std::function<void()> f;
 };
 }  // namespace airewar::util
 

@@ -31,17 +31,17 @@ namespace airewar::ui::scene {
 class MainMenu final {
  public:
   MainMenu() noexcept
-      : background_(resources->mainMenuBackground),
-        title_(Image2D::centered(resources->mainMenuTitle, 0.5f, layout(0, 5))),
-        joinGame_(Button2D::centered(
+      : background(resources->mainMenuBackground),
+        title(Image2D::centered(resources->mainMenuTitle, 0.5f, layout(0, 5))),
+        joinGame(Button2D::centered(
             resources->joinGameOn, resources->joinGameOff, 0.5f, layout(1, 5))),
-        hostGame_(Button2D::centered(
+        hostGame(Button2D::centered(
             resources->hostGameOn, resources->hostGameOff, 0.5f, layout(2, 5))),
-        options_(Button2D::centered(resources->optionsOn, resources->optionsOff,
+        options(Button2D::centered(resources->optionsOn, resources->optionsOff,
                                     0.5, layout(3, 5))),
-        quit_(Button2D::centered(resources->quitOn, resources->quitOff, 0.5,
+        quit(Button2D::centered(resources->quitOn, resources->quitOff, 0.5,
                                  layout(4, 5))),
-        clicked_(nullptr) {}
+        clicked(nullptr) {}
   MainMenu(MainMenu const &) noexcept = delete;
   MainMenu(MainMenu &&) noexcept = delete;
 
@@ -51,27 +51,27 @@ class MainMenu final {
   MainMenu &operator=(MainMenu &&) noexcept = delete;
 
   void draw() noexcept {
-    background_.draw();
-    title_.draw();
-    joinGame_.draw();
-    hostGame_.draw();
-    options_.draw();
-    quit_.draw();
+    background.draw();
+    title.draw();
+    joinGame.draw();
+    hostGame.draw();
+    options.draw();
+    quit.draw();
   }
 
   void downAt(int32_t x, int32_t y) noexcept {
-    if (joinGame_.clicked(x, y)) {
-      clicked_ = &joinGame_;
-      joinGame_.on = true;
-    } else if (hostGame_.clicked(x, y)) {
-      clicked_ = &hostGame_;
-      hostGame_.on = true;
-    } else if (options_.clicked(x, y)) {
-      clicked_ = &options_;
-      options_.on = true;
-    } else if (quit_.clicked(x, y)) {
-      clicked_ = &quit_;
-      quit_.on = true;
+    if (joinGame.clicked(x, y)) {
+      clicked = &joinGame;
+      joinGame.on = true;
+    } else if (hostGame.clicked(x, y)) {
+      clicked = &hostGame;
+      hostGame.on = true;
+    } else if (options.clicked(x, y)) {
+      clicked = &options;
+      options.on = true;
+    } else if (quit.clicked(x, y)) {
+      clicked = &quit;
+      quit.on = true;
     }
   }
 
@@ -84,22 +84,22 @@ class MainMenu final {
   };
 
   Action upAt(int32_t x, int32_t y) noexcept {
-    if (clicked_) {
-      clicked_->on = false;
-      if (joinGame_.clicked(x, y) && clicked_ == &joinGame_) {
-        clicked_ = nullptr;
+    if (clicked) {
+      clicked->on = false;
+      if (joinGame.clicked(x, y) && clicked == &joinGame) {
+        clicked = nullptr;
         return Action::JOIN;
-      } else if (hostGame_.clicked(x, y) && clicked_ == &hostGame_) {
-        clicked_ = nullptr;
+      } else if (hostGame.clicked(x, y) && clicked == &hostGame) {
+        clicked = nullptr;
         return Action::HOST;
-      } else if (options_.clicked(x, y) && clicked_ == &options_) {
-        clicked_ = nullptr;
+      } else if (options.clicked(x, y) && clicked == &options) {
+        clicked = nullptr;
         return Action::OPTIONS;
-      } else if (quit_.clicked(x, y) && clicked_ == &quit_) {
-        clicked_ = nullptr;
+      } else if (quit.clicked(x, y) && clicked == &quit) {
+        clicked = nullptr;
         return Action::QUIT;
       } else {
-        clicked_ = nullptr;
+        clicked = nullptr;
         return Action::NONE;
       }
     } else {
@@ -108,13 +108,13 @@ class MainMenu final {
   }
 
  private:
-  Background2D background_;
-  Image2D title_;
-  Button2D joinGame_;
-  Button2D hostGame_;
-  Button2D options_;
-  Button2D quit_;
-  Button2D *clicked_;
+  Background2D background;
+  Image2D title;
+  Button2D joinGame;
+  Button2D hostGame;
+  Button2D options;
+  Button2D quit;
+  Button2D *clicked;
 };
 
 void mainMenu() noexcept {

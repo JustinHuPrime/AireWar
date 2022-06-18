@@ -22,20 +22,20 @@
 using namespace std;
 
 namespace airewar::util {
-ScopeGuard::ScopeGuard() noexcept : f_([]() {}) {}
+ScopeGuard::ScopeGuard() noexcept : f([]() {}) {}
 
-ScopeGuard::ScopeGuard(std::function<void()> const &f) noexcept : f_(f) {}
+ScopeGuard::ScopeGuard(std::function<void()> const &f) noexcept : f(f) {}
 
-ScopeGuard::~ScopeGuard() noexcept { f_(); }
+ScopeGuard::~ScopeGuard() noexcept { f(); }
 
 void ScopeGuard::reset() noexcept {
-  f_();
-  f_ = []() {};
+  f();
+  f = []() {};
 }
 
-void ScopeGuard::reset(std::function<void()> const &f) noexcept {
-  f_();
-  f_ = f;
+void ScopeGuard::reset(std::function<void()> const &next) noexcept {
+  f();
+  f = next;
 }
 
 }  // namespace airewar::util

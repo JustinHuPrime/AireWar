@@ -143,7 +143,7 @@ class Map final {
 
     void forEach(std::function<void(Tile &)> const &) noexcept override;
 
-    std::array<std::unique_ptr<TriangularNode>, 20> children_;
+    std::array<std::unique_ptr<TriangularNode>, 20> children;
   };
   struct TriangularNode : public Node {
     explicit TriangularNode(std::array<glm::vec3, 3> const &vertices) noexcept;
@@ -159,7 +159,7 @@ class Map final {
 
     bool intersectsRay(glm::vec3 const &ray) const noexcept override;
 
-    std::array<glm::vec3, 3> vertices_;
+    std::array<glm::vec3, 3> vertices;
     glm::vec3 centroid;
   };
   struct TriangleNode final : public TriangularNode {
@@ -180,7 +180,7 @@ class Map final {
 
     void forEach(std::function<void(Tile &)> const &) noexcept override;
 
-    std::array<std::unique_ptr<TriangularNode>, 4> children_;
+    std::array<std::unique_ptr<TriangularNode>, 4> children;
   };
   struct LeafNode final : public TriangularNode {
     explicit LeafNode(std::array<glm::vec3, 3> const &vertices) noexcept;
@@ -199,11 +199,11 @@ class Map final {
 
     void forEach(std::function<void(Tile &)> const &) noexcept override;
 
-    Tile tile_;
+    Tile tile;
   };
 
-  std::unique_ptr<IcosaNode> root_;
-  uint64_t seed_;
+  std::unique_ptr<IcosaNode> root;
+  uint64_t seed;
 };
 }  // namespace airewar::game
 

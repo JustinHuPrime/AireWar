@@ -133,15 +133,15 @@ void debugMessageCallback(GLenum source, GLenum type, GLuint id,
 }  // namespace
 
 Window::Window()
-    : window_(nullptr, SDL_DestroyWindow),
-      context_(nullptr, SDL_GL_DeleteContext) {
+    : window(nullptr, SDL_DestroyWindow),
+      context(nullptr, SDL_GL_DeleteContext) {
   if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
     throw InitException("Could not initialize SDL", SDL_GetError());
 
-  window_.reset(SDL_CreateWindow(
+  window.reset(SDL_CreateWindow(
       "AireWar", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 0, 0,
       SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_OPENGL));
-  if (!window_) throw InitException("Could not create window", SDL_GetError());
+  if (!window) throw InitException("Could not create window", SDL_GetError());
 
   if (options->msaa != Options::MSAALevel::ZERO) {
     setAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
@@ -155,7 +155,7 @@ Window::Window()
 #endif
   setAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
-  context_.reset(SDL_GL_CreateContext(window_.get()));
+  context.reset(SDL_GL_CreateContext(window.get()));
 
   if (GLenum status = glewInit(); status != GLEW_OK)
     throw InitException(
@@ -171,20 +171,20 @@ Window::Window()
       throw InitException("Could not disable vsync", SDL_GetError());
   }
 
-  SDL_GL_GetDrawableSize(window_.get(), &width_, &height_);
-  if (width_ > height_ * 16 / 9) {
+  SDL_GL_GetDrawableSize(window.get(), &width, &height);
+  if (width > height * 16 / 9) {
     // overly wide
-    int padding = (width_ - height_ * 16 / 9) / 2;
-    width_ = height_ * 16 / 9;
-    glViewport(padding, 0, width_, height_);
-  } else if (height_ > width_ * 9 / 16) {
+    int padding = (width - height * 16 / 9) / 2;
+    width = height * 16 / 9;
+    glViewport(padding, 0, width, height);
+  } else if (height > width * 9 / 16) {
     // overly tall
-    int padding = (height_ - width_ * 9 / 16) / 2;
-    height_ = width_ * 9 / 16;
-    glViewport(0, padding, width_, height_);
+    int padding = (height - width * 9 / 16) / 2;
+    height = width * 9 / 16;
+    glViewport(0, padding, width, height);
   } else {
     // exactly 16:9
-    glViewport(0, 0, width_, height_);
+    glViewport(0, 0, width, height);
   }
 
   glEnable(GL_BLEND);
@@ -209,11 +209,11 @@ Window::~Window() noexcept {
   SDL_Quit();
 }
 
-void Window::render() noexcept { SDL_GL_SwapWindow(window_.get()); }
+void Window::render() noexcept { SDL_GL_SwapWindow(window.get()); }
 
-SDL_Window *Window::window() noexcept { return window_.get(); }
-int Window::width() const noexcept { return width_; }
-int Window::height() const noexcept { return height_; }
+SDL_Window *Window::getWindow() noexcept { return window.get(); }
+int Window::getWidth() const noexcept { return width; }
+int Window::getHeight() const noexcept { return height; }
 
 void Window::clear() noexcept {
   glClearColor(1.0f, 0.0f, 1.0f, 1.0f);

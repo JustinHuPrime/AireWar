@@ -57,10 +57,10 @@ class Server final {
     Connection &operator=(Connection &&) noexcept = default;
 
    private:
-    Server &server_;
-    std::unique_ptr<networking::Connection> connection_;
+    Server &server;
+    std::unique_ptr<networking::Connection> connection;
 
-    std::thread thread_;
+    std::thread thread;
 
     void run() noexcept;
   };
@@ -85,17 +85,17 @@ class Server final {
  private:
   static constexpr size_t NUM_PLAYERS = 2;
 
-  std::string password_;
-  std::atomic_bool stop_;
-  std::unique_ptr<networking::Server> server_;
+  std::string password;
+  std::atomic_bool stop;
+  std::unique_ptr<networking::Server> server;
 
-  std::mt19937_64 rng_;
-  Map map_;
+  std::mt19937_64 rng;
+  Map map;
 
-  std::mutex connectionMutex_;
-  std::list<Connection> connections_;
+  std::mutex connectionMutex;
+  std::list<Connection> connections;
 
-  std::thread thread_;
+  std::thread thread;
 
   void run() noexcept;
 };

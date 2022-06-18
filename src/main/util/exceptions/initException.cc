@@ -27,18 +27,18 @@ using namespace std;
 namespace airewar::util::exceptions {
 InitException::InitException(string const &title,
                              string const &message) noexcept
-    : title_(title), message_(message), what_([&title, &message]() {
+    : title(title), message(message), whatString([&title, &message]() {
         stringstream ss;
         ss << title << ": " << message;
         return ss.str();
       }()) {}
 
 InitException::InitException(string const &message) noexcept
-    : title_(message), message_(message), what_(message) {}
+    : title(message), message(message), whatString(message) {}
 
-char const *InitException::what() const noexcept { return what_.c_str(); }
+char const *InitException::what() const noexcept { return whatString.c_str(); }
 
-string const &InitException::title() const noexcept { return title_; }
+string const &InitException::getTitle() const noexcept { return title; }
 
-string const &InitException::message() const noexcept { return message_; }
+string const &InitException::getMessage() const noexcept { return message; }
 }  // namespace airewar::util::exceptions

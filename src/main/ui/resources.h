@@ -46,10 +46,10 @@ class GLResource {
   GLResource &operator=(GLResource const &) noexcept = delete;
   GLResource &operator=(GLResource &&) noexcept;
 
-  unsigned id() noexcept;
+  unsigned get() noexcept;
 
  protected:
-  unsigned id_;
+  unsigned id;
 
   GLResource() noexcept;
   explicit GLResource(unsigned id) noexcept;
@@ -115,7 +115,7 @@ class ShaderProgram final : public GLResource {
                             glm::mat4 const &value) noexcept;
 
  private:
-  std::unordered_map<std::string, int> uniforms_;
+  std::unordered_map<std::string, int> uniforms;
 
   int getUniformLocation(std::string const &name) noexcept;
 };
@@ -137,8 +137,8 @@ class Texture2D final : public GLResource {
 
   void use(GLenum textureNumber) noexcept;
 
-  int width() const noexcept;
-  int height() const noexcept;
+  int getWidth() const noexcept;
+  int getHeight() const noexcept;
 
   static constexpr float SCREEN_WIDTH = 3840.0f;
   static constexpr float SCREEN_HEIGHT = 2160.0f;
@@ -146,8 +146,8 @@ class Texture2D final : public GLResource {
  private:
   Texture2D(int width, int height, void const *pixels) noexcept;
 
-  int width_;
-  int height_;
+  int width;
+  int height;
 };
 
 class VBO final : public GLResource {
@@ -256,10 +256,10 @@ class Font final {
 
  private:
   std::unique_ptr<std::remove_pointer<FT_Face>::type, decltype(&FT_Done_Face)>
-      face_;
-  unsigned size_;
+      face;
+  unsigned size;
   std::unordered_map<std::pair<char32_t, unsigned>, Glyph,
-                     airewar::util::hash<unsigned, char32_t>> mutable cache_;
+                     airewar::util::hash<unsigned, char32_t>> mutable cache;
 };
 
 class ResourceManager final {
@@ -337,7 +337,7 @@ class ResourceManager final {
 
  private:
   // save between loads
-  std::unique_ptr<VertexShader> image2Dv_;
+  std::unique_ptr<VertexShader> image2Dv;
 };
 
 extern std::unique_ptr<ResourceManager> resources;

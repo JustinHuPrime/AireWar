@@ -134,10 +134,10 @@ int main(int argc, char *argv[]) {
 
     return EXIT_SUCCESS;
   } catch (InitException const &e) {
-    if (SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, e.title().c_str(),
-                                 e.message().c_str(),
-                                 window ? window->window() : nullptr) != 0) {
-      cerr << "ERROR: " << e.title() << ": " << e.message() << endl;
+    if (SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, e.getTitle().c_str(),
+                                 e.getMessage().c_str(),
+                                 window ? window->getWindow() : nullptr) != 0) {
+      cerr << "ERROR: " << e.getTitle() << ": " << e.getMessage() << endl;
       return EXIT_FAILURE;
     }
   }

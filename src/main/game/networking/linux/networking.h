@@ -46,7 +46,7 @@ class FD final {
   int get() noexcept;
 
  private:
-  int fd_;
+  int fd;
 };
 
 class Connection : public airewar::game::networking::Connection {
@@ -67,8 +67,8 @@ class Connection : public airewar::game::networking::Connection {
   void recvRaw(void *data, size_t length) override;
 
  private:
-  FD fd_;
-  std::atomic_bool const &stop_;
+  FD fd;
+  std::atomic_bool const &stop;
 };
 
 class Server : public airewar::game::networking::Server {
@@ -86,9 +86,9 @@ class Server : public airewar::game::networking::Server {
   std::unique_ptr<airewar::game::networking::Connection> accept() override;
 
  private:
-  FD fd_;
-  std::string const &password_;
-  std::atomic_bool const &stop_;
+  FD fd;
+  std::string const &password;
+  std::atomic_bool const &stop;
 };
 }  // namespace airewar::game::networking::linux
 

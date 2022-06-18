@@ -38,19 +38,19 @@ class Window final {
 
   void render() noexcept;
 
-  SDL_Window *window() noexcept;
-  int width() const noexcept;
-  int height() const noexcept;
+  SDL_Window *getWindow() noexcept;
+  int getWidth() const noexcept;
+  int getHeight() const noexcept;
 
   void clear() noexcept;
 
  private:
-  std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)> window_;
+  std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)> window;
   std::unique_ptr<std::remove_pointer<SDL_GLContext>::type,
                   decltype(&SDL_GL_DeleteContext)>
-      context_;
-  int width_;
-  int height_;
+      context;
+  int width;
+  int height;
 };
 
 extern std::unique_ptr<Window> window;

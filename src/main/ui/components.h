@@ -37,7 +37,7 @@ class Background2D final {
   void draw() noexcept;
 
  private:
-  Texture2D &texture_;
+  Texture2D &texture;
 };
 
 class Image2D final {
@@ -55,9 +55,9 @@ class Image2D final {
   void draw() noexcept;
 
  private:
-  Texture2D &texture_;
-  VBO vbo_;
-  VAO vao_;
+  Texture2D &texture;
+  VBO vbo;
+  VAO vao;
 
   Image2D(Texture2D &, float x, float y) noexcept;
 };
@@ -85,14 +85,14 @@ class Button2D final {
   bool clicked(int32_t x, int32_t y) const noexcept;
 
  private:
-  Texture2D &onTexture_;
-  Texture2D &offTexture_;
-  VBO vbo_;
-  VAO vao_;
-  float left_;
-  float right_;
-  float top_;
-  float bottom_;
+  Texture2D &onTexture;
+  Texture2D &offTexture;
+  VBO vbo;
+  VAO vao;
+  float left;
+  float right;
+  float top;
+  float bottom;
 
   static constexpr float RADIUS = 100;
 
@@ -122,30 +122,30 @@ class Textbox2D final {
 
   void textEditing(std::u32string const &text) noexcept;
   void textInput(std::u32string const &text) noexcept;
-  void left() noexcept;
-  void right() noexcept;
-  void home() noexcept;
-  void end() noexcept;
+  void cursorLeft() noexcept;
+  void cursorRight() noexcept;
+  void cursorHome() noexcept;
+  void cursorEnd() noexcept;
   void backspace() noexcept;
 
  private:
-  Font &font_;
-  Texture2D &texture_;
-  glm::vec4 colour_;
-  VBO vbo_;
-  VAO vao_;
-  float left_;
-  float right_;
-  float top_;
-  float bottom_;
-  std::u32string preCursor_;
-  std::u32string composition_;
-  std::u32string postCursor_;
+  Font &font;
+  Texture2D &texture;
+  glm::vec4 colour;
+  VBO vbo;
+  VAO vao;
+  float left;
+  float right;
+  float top;
+  float bottom;
+  std::u32string preCursor;
+  std::u32string composition;
+  std::u32string postCursor;
 
-  VBO glyphVBO_;
-  VAO glyphVAO_;
-  VBO cursorVBO_;
-  VAO cursorVAO_;
+  VBO glyphVBO;
+  VAO glyphVAO;
+  VBO cursorVBO;
+  VAO cursorVAO;
 
   static constexpr float RADIUS = 50;
 
@@ -173,18 +173,18 @@ class TextField2D final {
   void draw() noexcept;
 
  private:
-  Font &font_;
-  Texture2D &texture_;
-  glm::vec4 colour_;
-  VBO vbo_;
-  VAO vao_;
-  float left_;
-  float right_;
-  float top_;
-  float bottom_;
+  Font &font;
+  Texture2D &texture;
+  glm::vec4 colour;
+  VBO vbo;
+  VAO vao;
+  float left;
+  float right;
+  float top;
+  float bottom;
 
-  VBO glyphVBO_;
-  VAO glyphVAO_;
+  VBO glyphVBO;
+  VAO glyphVAO;
 
   static constexpr float RADIUS = 0;
 

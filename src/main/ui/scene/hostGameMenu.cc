@@ -30,20 +30,20 @@ namespace airewar::ui::scene {
 class HostGameMenu final {
  public:
   HostGameMenu() noexcept
-      : background_(resources->hostGameBackground),
-        title_(Image2D::centered(resources->hostGameTitle, 0.5f, layout(0, 4))),
-        passwordLabel_(
+      : background(resources->hostGameBackground),
+        title(Image2D::centered(resources->hostGameTitle, 0.5f, layout(0, 4))),
+        passwordLabel(
             Image2D::alignBottom(resources->passwordLabel, 0.5f, layout(1, 4))),
-        password_(Textbox2D::alignTop(resources->orbitron, resources->textbox,
-                                      {0.0f, 0.0f, 0.0f, 1.0f}, 0.5f,
-                                      layout(1, 4))),
-        back_(Button2D::alignRight(resources->backOn, resources->backOff, 0.5f,
-                                   layout(3, 4))),
-        host_(Button2D::alignLeft(resources->hostOn, resources->hostOff, 0.5f,
+        password(Textbox2D::alignTop(resources->orbitron, resources->textbox,
+                                     {0.0f, 0.0f, 0.0f, 1.0f}, 0.5f,
+                                     layout(1, 4))),
+        back(Button2D::alignRight(resources->backOn, resources->backOff, 0.5f,
                                   layout(3, 4))),
-        clickedButton_(nullptr),
-        clickedTextbox_(nullptr),
-        activeTextbox_(nullptr) {}
+        host(Button2D::alignLeft(resources->hostOn, resources->hostOff, 0.5f,
+                                 layout(3, 4))),
+        clickedButton(nullptr),
+        clickedTextbox(nullptr),
+        activeTextbox(nullptr) {}
   HostGameMenu(HostGameMenu const &) noexcept = delete;
   HostGameMenu(HostGameMenu &&) noexcept = delete;
 
@@ -53,28 +53,28 @@ class HostGameMenu final {
   HostGameMenu &operator=(HostGameMenu &&) noexcept = delete;
 
   void draw() noexcept {
-    background_.draw();
-    title_.draw();
-    passwordLabel_.draw();
-    password_.draw();
-    back_.draw();
-    host_.draw();
+    background.draw();
+    title.draw();
+    passwordLabel.draw();
+    password.draw();
+    back.draw();
+    host.draw();
   }
 
   void downAt(int32_t x, int32_t y) noexcept {
-    if (activeTextbox_) {
+    if (activeTextbox) {
       SDL_StopTextInput();
-      activeTextbox_->active = false;
-      activeTextbox_ = nullptr;
+      activeTextbox->active = false;
+      activeTextbox = nullptr;
     }
-    if (password_.clicked(x, y)) {
-      clickedTextbox_ = &password_;
-    } else if (back_.clicked(x, y)) {
-      clickedButton_ = &back_;
-      back_.on = true;
-    } else if (host_.clicked(x, y)) {
-      clickedButton_ = &host_;
-      host_.on = true;
+    if (password.clicked(x, y)) {
+      clickedTextbox = &password;
+    } else if (back.clicked(x, y)) {
+      clickedButton = &back;
+      back.on = true;
+    } else if (host.clicked(x, y)) {
+      clickedButton = &host;
+      host.on = true;
     }
   }
 
@@ -85,24 +85,24 @@ class HostGameMenu final {
   };
 
   Action upAt(int32_t x, int32_t y) noexcept {
-    if (clickedTextbox_) {
-      if (password_.clicked(x, y) && clickedTextbox_ == &password_) {
-        activeTextbox_ = clickedTextbox_;
+    if (clickedTextbox) {
+      if (password.clicked(x, y) && clickedTextbox == &password) {
+        activeTextbox = clickedTextbox;
         SDL_StartTextInput();
-        password_.active = true;
+        password.active = true;
       }
-      clickedTextbox_ = nullptr;
+      clickedTextbox = nullptr;
       return Action::NONE;
-    } else if (clickedButton_) {
-      clickedButton_->on = false;
-      if (back_.clicked(x, y) && clickedButton_ == &back_) {
-        clickedButton_ = nullptr;
+    } else if (clickedButton) {
+      clickedButton->on = false;
+      if (back.clicked(x, y) && clickedButton == &back) {
+        clickedButton = nullptr;
         return Action::BACK;
-      } else if (host_.clicked(x, y) && clickedButton_ == &host_) {
-        clickedButton_ = nullptr;
+      } else if (host.clicked(x, y) && clickedButton == &host) {
+        clickedButton = nullptr;
         return Action::HOST;
       } else {
-        clickedButton_ = nullptr;
+        clickedButton = nullptr;
         return Action::NONE;
       }
     } else {
@@ -111,45 +111,45 @@ class HostGameMenu final {
   }
 
   void textInput(u32string const &text) noexcept {
-    if (activeTextbox_) activeTextbox_->textInput(text);
+    if (activeTextbox) activeTextbox->textInput(text);
   }
 
   void textEditing(u32string const &text) noexcept {
-    if (activeTextbox_) activeTextbox_->textEditing(text);
+    if (activeTextbox) activeTextbox->textEditing(text);
   }
 
   void left() noexcept {
-    if (activeTextbox_) activeTextbox_->left();
+    if (activeTextbox) activeTextbox->cursorLeft();
   }
 
   void right() noexcept {
-    if (activeTextbox_) activeTextbox_->right();
+    if (activeTextbox) activeTextbox->cursorRight();
   }
 
   void home() noexcept {
-    if (activeTextbox_) activeTextbox_->home();
+    if (activeTextbox) activeTextbox->cursorHome();
   }
 
   void end() noexcept {
-    if (activeTextbox_) activeTextbox_->end();
+    if (activeTextbox) activeTextbox->cursorEnd();
   }
 
   void backspace() noexcept {
-    if (activeTextbox_) activeTextbox_->backspace();
+    if (activeTextbox) activeTextbox->backspace();
   }
 
-  u32string password() const noexcept { return password_; }
+  u32string getPassword() const noexcept { return password; }
 
  private:
-  Background2D background_;
-  Image2D title_;
-  Image2D passwordLabel_;
-  Textbox2D password_;
-  Button2D back_;
-  Button2D host_;
-  Button2D *clickedButton_;
-  Textbox2D *clickedTextbox_;
-  Textbox2D *activeTextbox_;
+  Background2D background;
+  Image2D title;
+  Image2D passwordLabel;
+  Textbox2D password;
+  Button2D back;
+  Button2D host;
+  Button2D *clickedButton;
+  Textbox2D *clickedTextbox;
+  Textbox2D *activeTextbox;
 };
 
 void hostGameMenu() noexcept {
@@ -173,7 +173,7 @@ void hostGameMenu() noexcept {
               return mainMenu();
             }
             case HostGameMenu::Action::HOST: {
-              return hostWaitingRoom(hostGameMenu.password());
+              return hostWaitingRoom(hostGameMenu.getPassword());
             }
           }
           break;

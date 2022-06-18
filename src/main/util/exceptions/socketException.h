@@ -40,7 +40,7 @@ class SocketException final : public std::exception {
   operator std::string() const noexcept;
 
  private:
-  std::string message_;
+  std::string message;
 };
 }  // namespace airewar::util::exceptions
 

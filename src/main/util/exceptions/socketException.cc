@@ -23,9 +23,9 @@ using namespace std;
 
 namespace airewar::util::exceptions {
 SocketException::SocketException(string const &message) noexcept
-    : message_(message) {}
+    : message(message) {}
 
-char const *SocketException::what() const noexcept { return message_.c_str(); }
+char const *SocketException::what() const noexcept { return message.c_str(); }
 
-SocketException::operator string() const noexcept { return message_; }
+SocketException::operator string() const noexcept { return message; }
 }  // namespace airewar::util::exceptions

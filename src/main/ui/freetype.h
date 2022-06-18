@@ -43,7 +43,7 @@ class FreeType final {
  private:
   std::unique_ptr<std::remove_pointer<FT_Library>::type,
                   decltype(&FT_Done_FreeType)>
-      library_;
+      library;
 };
 
 extern std::unique_ptr<FreeType> freetype;

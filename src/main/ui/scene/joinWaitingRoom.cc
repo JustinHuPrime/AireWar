@@ -33,16 +33,16 @@ namespace airewar::ui::scene {
 class JoinWaitingRoom final {
  public:
   JoinWaitingRoom() noexcept
-      : waiting_(resources->connectingBackground),
-        error_(resources->errorBackground),
-        errorMessage_(TextField2D::centered(
+      : waiting(resources->connectingBackground),
+        error(resources->errorBackground),
+        errorMessage(TextField2D::centered(
             resources->orbitron, resources->errorTextField,
             {1.0f, 0.0f, 0.0f, 1.0f}, 0.5f, layout(2, 4))),
-        generating_(resources->generatingMapBackground),
-        back_(Button2D::centered(resources->backOn, resources->backOff, 0.5f,
-                                 layout(3, 4))),
-        clicked_(nullptr),
-        converter_() {}
+        generating(resources->generatingMapBackground),
+        back(Button2D::centered(resources->backOn, resources->backOff, 0.5f,
+                                layout(3, 4))),
+        clicked(nullptr),
+        converter() {}
   JoinWaitingRoom(JoinWaitingRoom const &) noexcept = delete;
   JoinWaitingRoom(JoinWaitingRoom &&) noexcept = delete;
 
@@ -54,27 +54,27 @@ class JoinWaitingRoom final {
   void draw() noexcept {
     switch (client->state) {
       case Client::State::STARTING: {
-        waiting_.draw();
+        waiting.draw();
         break;
       }
       case Client::State::ERROR: {
-        error_.draw();
-        errorMessage_.text = converter_.from_bytes(client->errorMessage);
-        errorMessage_.draw();
+        error.draw();
+        errorMessage.text = converter.from_bytes(client->errorMessage);
+        errorMessage.draw();
         break;
       }
       case Client::State::GENERATING_MAP: {
-        generating_.draw();
+        generating.draw();
         break;
       }
     }
-    back_.draw();
+    back.draw();
   }
 
   void downAt(int32_t x, int32_t y) noexcept {
-    if (back_.clicked(x, y)) {
-      clicked_ = &back_;
-      back_.on = true;
+    if (back.clicked(x, y)) {
+      clicked = &back;
+      back.on = true;
     }
   }
 
@@ -84,13 +84,13 @@ class JoinWaitingRoom final {
   };
 
   Action upAt(int32_t x, int32_t y) noexcept {
-    if (clicked_) {
-      clicked_->on = false;
-      if (back_.clicked(x, y) && clicked_ == &back_) {
-        clicked_ = nullptr;
+    if (clicked) {
+      clicked->on = false;
+      if (back.clicked(x, y) && clicked == &back) {
+        clicked = nullptr;
         return Action::BACK;
       } else {
-        clicked_ = nullptr;
+        clicked = nullptr;
         return Action::NONE;
       }
     } else {
@@ -99,13 +99,13 @@ class JoinWaitingRoom final {
   }
 
  private:
-  Background2D waiting_;
-  Background2D error_;
-  TextField2D errorMessage_;
-  Background2D generating_;
-  Button2D back_;
-  Button2D *clicked_;
-  wstring_convert<codecvt_utf8<char32_t>, char32_t> converter_;
+  Background2D waiting;
+  Background2D error;
+  TextField2D errorMessage;
+  Background2D generating;
+  Button2D back;
+  Button2D *clicked;
+  wstring_convert<codecvt_utf8<char32_t>, char32_t> converter;
 };
 
 void joinWaitingRoom(u32string address, u32string password) noexcept {

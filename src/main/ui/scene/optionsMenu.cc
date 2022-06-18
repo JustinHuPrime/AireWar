@@ -26,11 +26,11 @@ namespace airewar::ui::scene {
 class OptionsMenu final {
  public:
   OptionsMenu() noexcept
-      : background_(resources->optionsBackground),
-        title_(Image2D::centered(resources->optionsTitle, 0.5f, layout(0, 7))),
-        cancel_(Button2D::centered(resources->backOn, resources->backOff, 0.25f,
+      : background(resources->optionsBackground),
+        title(Image2D::centered(resources->optionsTitle, 0.5f, layout(0, 7))),
+        cancel(Button2D::centered(resources->backOn, resources->backOff, 0.25f,
                                    layout(6, 7))),
-        accept_(Button2D::centered(resources->joinOn, resources->joinOff, 0.75f,
+        accept(Button2D::centered(resources->joinOn, resources->joinOff, 0.75f,
                                    layout(6, 7))) {
   }  // TODO: use appropriate buttons
   OptionsMenu(OptionsMenu const &) noexcept = delete;
@@ -42,10 +42,10 @@ class OptionsMenu final {
   OptionsMenu &operator=(OptionsMenu &&) noexcept = delete;
 
   void draw() noexcept {
-    background_.draw();
-    title_.draw();
-    cancel_.draw();
-    accept_.draw();
+    background.draw();
+    title.draw();
+    cancel.draw();
+    accept.draw();
   }
 
   void downAt(int32_t x, int32_t y) noexcept {}
@@ -57,10 +57,10 @@ class OptionsMenu final {
   Action upAt(int32_t x, int32_t y) noexcept { return Action::NONE; }
 
  private:
-  Background2D background_;
-  Image2D title_;
-  Button2D cancel_;
-  Button2D accept_;
+  Background2D background;
+  Image2D title;
+  Button2D cancel;
+  Button2D accept;
 };
 
 void optionsMenu() noexcept {

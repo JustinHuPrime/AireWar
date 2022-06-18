@@ -25,7 +25,7 @@ using namespace airewar::util::exceptions;
 
 namespace airewar::ui {
 FreeType::FreeType()
-    : library_(
+    : library(
           []() {
             FT_Library library;
             if (FT_Init_FreeType(&library) != 0)
@@ -34,9 +34,9 @@ FreeType::FreeType()
           }(),
           FT_Done_FreeType) {}
 
-FT_Library FreeType::get() noexcept { return library_.get(); }
+FT_Library FreeType::get() noexcept { return library.get(); }
 
-FT_Library const FreeType::get() const noexcept { return library_.get(); }
+FT_Library const FreeType::get() const noexcept { return library.get(); }
 
 std::unique_ptr<FreeType> freetype;
 }  // namespace airewar::ui

@@ -80,7 +80,7 @@ WARNINGS := -pedantic -pedantic-errors -Wall -Wextra -Wdouble-promotion\
 -Wredundant-decls -Winline -Winvalid-pch -Wvector-operation-performance\
 -Wstack-protector -Whsa -Wabi-tag -Wctor-dtor-privacy -Wnoexcept\
 -Wnon-virtual-dtor -Weffc++ -Wstrict-null-sentinel -Wold-style-cast\
--Woverloaded-virtual -Wsign-promo
+-Woverloaded-virtual -Wsign-promo -Wunused -Wdisabled-optimization
 
 OPTIONS := -std=c++20 -D_POSIX_C_SOURCE=202205L -I$(SRCDIR)\
 -Ilibs/stb -Ilibs/json/single_include $(shell pkg-config --cflags libsodium sdl2 glew opengl freetype2 glm)
@@ -89,7 +89,7 @@ LIBS := $(shell pkg-config --libs libsodium sdl2 glew opengl freetype2 glm)
 TLIBS := libs/Catch2/Build/src/libCatch2Main.a libs/Catch2/Build/src/libCatch2.a
 
 DEBUGOPTIONS := -Og -ggdb -DASSET_PREFIX=\"assets\"s
-RELEASEOPTIONS := -O3 -Wunused -Wdisabled-optimization -DNDEBUG -DASSET_PREFIX=\"/usr/share/airewar/assets\"
+RELEASEOPTIONS := -O3 -DNDEBUG -DASSET_PREFIX=\"/usr/share/airewar/assets\"
 
 
 .PHONY: debug release docs install clean
