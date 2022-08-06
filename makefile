@@ -136,21 +136,21 @@ $(DEPS): $$(patsubst $(DEPDIR)/%.dep,$(SRCDIR)/%.cc,$$@) | $$(dir $$@)
 	 $(SED) 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
 	 $(RM) $@.$$$$
 
-$(TEXENAME): libs/Catch2/Build/src/libCatch2Main.a libs/Catch2/Build/src/libCatch2.a libs/Catch2/Build/generated-includes/catch2/catch_user_config.hpp $(TOBJS) $(OBJS)
+$(TEXENAME): libs/Catch2/Build/src/libCatch2Main.a libs/Catch2/Build/src/libCatch2.a $(TOBJS) $(OBJS)
 	@$(ECHO) "Linking $@"
 	@$(CXX) -o $(TEXENAME) $(OPTIONS) $(TOPTIONS) $(filter-out %main.o,$(OBJS)) $(TOBJS) $(LIBS) $(TLIBS)
 
-$(TOBJS): $$(patsubst $(TOBJDIR)/%.o,$(TSRCDIR)/%.cc,$$@) $$(patsubst $(TOBJDIR)/%.o,$(TDEPDIR)/%.dep,$$@) | $$(dir $$@)
+$(TOBJS): $$(patsubst $(TOBJDIR)/%.o,$(TSRCDIR)/%.cc,$$@) $$(patsubst $(TOBJDIR)/%.o,$(TDEPDIR)/%.dep,$$@) libs/Catch2/Build/generated-includes/catch2/catch_user_config.hpp | $$(dir $$@)
 	@$(ECHO) "Compiling $@"
 	@$(CXX) -o $@ $(OPTIONS) $(TOPTIONS) -c $<
 
-$(TDEPS): $$(patsubst $(TDEPDIR)/%.dep,$(TSRCDIR)/%.cc,$$@) | $$(dir $$@)
+$(TDEPS): $$(patsubst $(TDEPDIR)/%.dep,$(TSRCDIR)/%.cc,$$@) libs/Catch2/Build/generated-includes/catch2/catch_user_config.hpp | $$(dir $$@)
 	@$(SET-E); $(RM) $@; \
 	 $(CXX) $(OPTIONS) $(TOPTIONS) -MM -MT $(patsubst $(TDEPDIR)/%.dep,$(TOBJDIR)/%.o,$@) $< > $@.$$$$; \
 	 $(SED) 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
 	 $(RM) $@.$$$$
 
-libs/Catch2/Build/src/libCatch2Main.a libs/Catch2/Build/src/libCatch2.a libs/Catch2/Build/generated-includes/catch2/catch_user_config.hpp:
+libs/Catch2/Build/src/libCatch2Main.a libs/Catch2/Build/src/libCatch2.a libs/Catch2/Build/generated-includes/catch2/catch_user_config.hpp &:
 	@$(ECHO) "Building Catch2"
 	@$(CMAKE) -S libs/Catch2 -B libs/Catch2/Build
 	@$(MAKE) -C libs/Catch2/Build
