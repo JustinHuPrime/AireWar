@@ -38,7 +38,7 @@ float scaleX(Texture2D const &tex) {
 }
 
 float scaleY(Texture2D const &tex) {
-  return tex.getWidth() / Texture2D::SCREEN_HEIGHT;
+  return tex.getHeight() / Texture2D::SCREEN_HEIGHT;
 }
 
 float tex2Window(float x) {
